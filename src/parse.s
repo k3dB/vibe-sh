@@ -27,8 +27,10 @@ parse_loop:
     cmp     w3, #0
     beq     parse_done      // End of string
 
-    // Check for space
+    // Check for space or newline
     cmp     w3, #32
+    beq     parse_space
+    cmp     w3, #10
     beq     parse_space
 
     // Regular character

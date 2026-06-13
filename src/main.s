@@ -36,13 +36,13 @@ _main:
 
     // Load addresses of bss buffers
     adrp    x19, input_buffer@PAGE
-    add     x19, x19, input_buffer@PAGEOFF  // x19 = pointer to input buffer
+    add     x19, x19, input_buffer@PAGEOFF // x19 = pointer to input buffer
 
     adrp    x21, token_array@PAGE
     add     x21, x21, token_array@PAGEOFF  // x21 = pointer to token array
 
     adrp    x23, path_buffer@PAGE
-    add     x23, x23, path_buffer@PAGEOFF    // x23 = pointer to path buffer
+    add     x23, x23, path_buffer@PAGEOFF  // x23 = pointer to path buffer
 
 repl_loop:
     // Display prompt "$$ "
