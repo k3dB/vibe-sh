@@ -11,6 +11,7 @@
 execute_external:
     stp     x29, x30, [sp, #-32]!
     mov     x29, sp
+    stp     x19, x20, [sp, #16]
 
     mov     x19, x0         // token array
     mov     x20, x1         // token count
@@ -36,6 +37,7 @@ execute_external:
     svc     #0x80
 
     add     sp, sp, #8
+    ldp     x19, x20, [sp, #16]
     ldp     x29, x30, [sp], #32
     ret
 
@@ -47,33 +49,33 @@ exec_child:
     // x1 = argv - need to null-terminate the token array
     // The token array is at x19, we need to add a NULL at the end
     // Allocate space for argv array on stack (token count + 1 for NULL)
-    mov     x22, x20        // token count
-    add     x22, x22, #1    // +1 for NULL terminator
-    lsl     x22, x22, #3    // multiply by 8 (pointer size)
-    sub     sp, sp, x22
+    mov     x9, x20         // token count
+    add     x9, x9, #1      // +1 for NULL terminator
+    lsl     x9, x9, #3      // multiply by 8 (pointer size)
+    sub     sp, sp, x9
     mov     x1, sp          // x1 = argv array on stack
 
     // Copy token pointers to argv array
-    mov     x22, x0         // save x0 (path)
-    mov     x23, x1         // argv write pointer
-    mov     x24, x19        // token array read pointer
-    mov     x25, x20        // token count
+    mov     x9, x0          // save x0 (path)
+    mov     x10, x1         // argv write pointer
+    mov     x11, x19        // token array read pointer
+    mov     x12, x20        // token count
 
 copy_argv_loop:
-    cmp     x25, #0
+    cmp     x12, #0
     beq     argv_copy_done
 
-    ldr     x3, [x24], #8   // load token pointer, advance
-    str     x3, [x23], #8   // store to argv, advance
-    sub     x25, x25, #1
+    ldr     x3, [x11], #8   // load token pointer, advance
+    str     x3, [x10], #8   // store to argv, advance
+    sub     x12, x12, #1
     b       copy_argv_loop
 
 argv_copy_done:
     // Null-terminate argv
-    str     xzr, [x23]
+    str     xzr, [x10]
 
     // Restore x0 (path)
-    mov     x0, x22
+    mov     x0, x9
 
     // x2 = envp (NULL for now)
     mov     x2, #0

@@ -58,9 +58,9 @@ execute_command:
     beq     builtin_cd_setup
 
     // Not a built-in, execute external command
-    // mov     x0, x3
-    // mov     x1, x4
-    //bl      execute_external
+    mov     x0, x3
+    mov     x1, x4
+    bl      execute_external
 
 execute_done:
     ret
