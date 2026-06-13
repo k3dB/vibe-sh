@@ -17,57 +17,65 @@
 // x1 = token count
 // x2 = path buffer
 execute_command:
-    stp     x29, x30, [sp, #-32]!
-    mov     x29, sp
+    // x3 = token array
+    // x4 = token count
+    // x5 = path buffer
+    // x6 = command name
 
-    // Save arguments
-    mov     x19, x0         // token array
-    mov     x20, x1         // token count
-    mov     x21, x2         // path buffer
+    mov     x3, x0         // token array
+    mov     x4, x1         // token count
+    mov     x5, x2         // path buffer
 
     // Check if token count is 0 (empty line)
-    cmp     x20, #0
+    cmp     x4, #0
     beq     execute_done
 
     // Get first token (command name)
-    ldr     x0, [x19]
+    ldr     x6, [x3]
 
     // Check for exit built-in
+    mov     x0, x6
     bl      strcmp_exit
     cmp     x0, #0
     beq     builtin_exit
 
-    // Reload command name for next comparison
-    ldr     x0, [x19]
-
     // Check for echo built-in
+    mov     x0, x6
     bl      strcmp_echo
     cmp     x0, #0
-    beq     builtin_echo
-
-    // Reload command name for next comparison
-    ldr     x0, [x19]
+    beq     builtin_echo_setup
 
     // Check for pwd built-in
+    mov     x0, x6
     bl      strcmp_pwd
     cmp     x0, #0
     beq     builtin_pwd
 
-    // Reload command name for next comparison
-    ldr     x0, [x19]
-
     // Check for cd built-in
+    mov     x0, x6
     bl      strcmp_cd
     cmp     x0, #0
-    beq     builtin_cd
+    beq     builtin_cd_setup
 
     // Not a built-in, execute external command
-    mov     x0, x19
-    mov     x1, x20
+    // mov     x0, x3
+    // mov     x1, x4
     //bl      execute_external
 
 execute_done:
-    ldp     x29, x30, [sp], #32
+    ret
+
+builtin_echo_setup:
+    mov     x0, x3
+    mov     x1, x4
+    bl      builtin_echo
+    ret
+
+builtin_cd_setup:
+    mov     x0, x3
+    mov     x1, x4
+    mov     x2, x5
+    bl      builtin_cd
     ret
 
 // Built-in: exit
@@ -86,34 +94,37 @@ builtin_exit:
     svc     #0x80
 
 // Built-in: echo
-// x19 = token array, x20 = token count
+// x0 = token array, x1 = token count
 builtin_echo:
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
+    // Use temporary registers
+    // x2 = current token index
+    // x3 = token pointer
+    // x4 = token length
 
-    // Start from token 1 (skip "echo")
-    mov     x22, #1
+    mov     x2, #1          // Start from token 1 (skip "echo")
 
 builtin_echo_loop:
-    cmp     x22, x20
+    cmp     x2, x1
     bge     builtin_echo_done
 
     // Get token pointer
-    ldr     x1, [x19, x22, lsl #3]
+    ldr     x3, [x0, x2, lsl #3]
 
     // Calculate token length
-    mov     x0, x1
+    mov     x0, x3
     bl      strlen
-    mov     x2, x0
+    mov     x4, x0
 
     // Print token
     mov     x0, #1
+    mov     x1, x3
+    mov     x2, x4
     mov     x16, #4
     svc     #0x80
 
     // Print space if not last token
-    add     x3, x22, #1
-    cmp     x3, x20
+    add     x5, x2, #1
+    cmp     x5, x1
     bge     builtin_echo_next
 
     mov     x0, #1
@@ -124,7 +135,7 @@ builtin_echo_loop:
     svc     #0x80
 
 builtin_echo_next:
-    add     x22, x22, #1
+    add     x2, x2, #1
     b       builtin_echo_loop
 
 builtin_echo_done:
@@ -136,11 +147,9 @@ builtin_echo_done:
     mov     x16, #4
     svc     #0x80
 
-    ldp     x29, x30, [sp], #16
-    b       execute_done
+    ret
 
 // Built-in: pwd
-// x21 = path buffer
 builtin_pwd:
     // For now, just print a placeholder since getcwd is not a direct syscall on macOS
     // In a real implementation, we'd call the libc getcwd function
@@ -159,13 +168,13 @@ builtin_pwd:
     mov     x16, #4
     svc     #0x80
 
-    b       execute_done
+    ret
 
 // Built-in: cd
-// x19 = token array, x20 = token count, x21 = path buffer
+// x0 = token array, x1 = token count, x2 = path buffer
 builtin_cd:
     // Check if argument provided
-    cmp     x20, #1
+    cmp     x1, #1
     bgt     cd_has_arg
 
     // No argument, go to HOME directory
@@ -176,11 +185,11 @@ builtin_cd:
     mov     x2, #26
     mov     x16, #4
     svc     #0x80
-    b       execute_done
+    ret
 
 cd_has_arg:
     // Get the path argument
-    ldr     x0, [x19, #8]
+    ldr     x0, [x0, #8]
 
     // chdir syscall
     mov     x16, #12        // chdir syscall number
@@ -199,7 +208,7 @@ cd_has_arg:
     svc     #0x80
 
 cd_done:
-    b       execute_done
+    ret
 
 .section __DATA, __data
 .p2align 2

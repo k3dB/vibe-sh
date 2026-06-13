@@ -14,48 +14,29 @@
 // x0 = string to compare
 // returns x0 = 0 if match, non-zero if not match
 strcmp_exit:
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
     adrp    x1, str_exit@PAGE
     add     x1, x1, str_exit@PAGEOFF
-    bl      strcmp
-    ldp     x29, x30, [sp], #16
-    ret
+    b       strcmp
 
 strcmp_echo:
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
     adrp    x1, str_echo@PAGE
     add     x1, x1, str_echo@PAGEOFF
-    bl      strcmp
-    ldp     x29, x30, [sp], #16
-    ret
+    b       strcmp
 
 strcmp_pwd:
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
     adrp    x1, str_pwd@PAGE
     add     x1, x1, str_pwd@PAGEOFF
-    bl      strcmp
-    ldp     x29, x30, [sp], #16
-    ret
+    b       strcmp
 
 strcmp_cd:
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
     adrp    x1, str_cd@PAGE
     add     x1, x1, str_cd@PAGEOFF
-    bl      strcmp
-    ldp     x29, x30, [sp], #16
-    ret
+    b       strcmp
 
 // String comparison
 // x0 = string1, x1 = string2
 // returns x0 = 0 if equal, non-zero if not equal
 strcmp:
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
-
 strcmp_loop:
     ldrb    w2, [x0], #1
     ldrb    w3, [x1], #1
@@ -67,21 +48,16 @@ strcmp_loop:
 
 strcmp_not_equal:
     mov     x0, #1
-    ldp     x29, x30, [sp], #16
     ret
 
 strcmp_equal:
     mov     x0, #0
-    ldp     x29, x30, [sp], #16
     ret
 
 // Calculate string length
 // x0 = string pointer
 // returns x0 = length
 strlen:
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
-
     mov     x1, x0
     mov     x0, #0
 
@@ -94,7 +70,6 @@ strlen_loop:
     b       strlen_loop
 
 strlen_done:
-    ldp     x29, x30, [sp], #16
     ret
 
 .section __DATA, __data
