@@ -13,16 +13,6 @@
 .globl _main
 
 _main:
-    // Load addresses of buffers each iteration
-    adrp    x3, input_buffer@PAGE
-    add     x3, x3, input_buffer@PAGEOFF // x3 = pointer to input buffer
-
-    adrp    x4, token_array@PAGE
-    add     x4, x4, token_array@PAGEOFF  // x4 = pointer to token array
-
-    adrp    x5, path_buffer@PAGE
-    add     x5, x5, path_buffer@PAGEOFF  // x5 = pointer to path buffer
-
     // Display prompt "$$ "
     mov     x0, #1                       // stdout
     adrp    x1, prompt@PAGE
@@ -33,37 +23,40 @@ _main:
 
     // Read user input
     mov     x0, #0                       // stdin
-    mov     x1, x3                       // buffer pointer
+    adrp    x1, input_buffer@PAGE
+    add     x1, x1, input_buffer@PAGEOFF
     mov     x2, #INPUT_BUFFER_SIZE
     mov     x16, #3                      // read syscall
     svc     #0x80
 
     // Save the read length
-    mov     x6, x0
+    mov     x3, x0
 
     // Check for EOF (read returns 0)
-    cmp     x6, #0
+    cmp     x3, #0
     beq     exit_shell
 
     // Check for error (read returns -1)
-    cmp     x6, #-1
+    cmp     x3, #-1
     beq     exit_shell
-
-    // Null-terminate the input
-    strb    wzr, [x3, x6]
 
     // Parse the command
     // x0 = input buffer, x1 = token array, returns x0 = token count
-    mov     x0, x3
-    mov     x1, x4
+    adrp    x0, input_buffer@PAGE
+    add     x0, x0, input_buffer@PAGEOFF
+    strb    wzr, [x0, x3]  // Null-terminate the input
+    adrp    x1, token_array@PAGE
+    add     x1, x1, token_array@PAGEOFF
     bl      parse_command
     mov     x6, x0         // x6 = token count
 
     // Execute the command
     // x0 = token array, x1 = token count, x2 = path buffer
-    mov     x0, x4
-    mov     x1, x6
-    mov     x2, x5
+    adrp    x0, token_array@PAGE
+    add     x0, x0, token_array@PAGEOFF
+    mov     x1, x3
+    adrp    x2, path_buffer@PAGE
+    add     x2, x2, path_buffer@PAGEOFF
     bl      execute_command
 
     // Loop back to display prompt
