@@ -3,7 +3,7 @@
 
 .section __TEXT, __text, regular, pure_instructions
 .p2align 2
-.global execute_external
+.globl execute_external
 
 // Execute external command
 // x0 = token array

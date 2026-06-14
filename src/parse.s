@@ -3,7 +3,7 @@
 
 .section __TEXT, __text, regular, pure_instructions
 .p2align 2
-.global parse_command
+.globl parse_command
 
 // Parse command into tokens (basic space-delimited version)
 // x0 = input buffer (null-terminated)

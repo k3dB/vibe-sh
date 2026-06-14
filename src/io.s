@@ -3,8 +3,8 @@
 
 .section __TEXT, __text, regular, pure_instructions
 .p2align 2
-.global print_tokens_simple
-.global print_number
+.globl print_tokens_simple
+.globl print_number
 
 // Print parsed tokens for debugging (simple version without indices)
 // x0 = token array

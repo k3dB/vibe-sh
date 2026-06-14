@@ -3,12 +3,12 @@
 
 .section __TEXT, __text, regular, pure_instructions
 .p2align 2
-.global strcmp
-.global strcmp_exit
-.global strcmp_echo
-.global strcmp_pwd
-.global strcmp_cd
-.global strlen
+.globl strcmp
+.globl strcmp_exit
+.globl strcmp_echo
+.globl strcmp_pwd
+.globl strcmp_cd
+.globl strlen
 
 // String comparison functions for built-in commands
 // x0 = string to compare

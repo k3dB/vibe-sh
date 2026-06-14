@@ -3,11 +3,11 @@
 
 .section __TEXT, __text, regular, pure_instructions
 .p2align 2
-.global execute_command
-.global builtin_exit
-.global builtin_echo
-.global builtin_pwd
-.global builtin_cd
+.globl execute_command
+.globl builtin_exit
+.globl builtin_echo
+.globl builtin_pwd
+.globl builtin_cd
 
 // Constants
 .equ PATH_MAX, 1024
@@ -92,6 +92,7 @@ builtin_exit:
     mov     x0, #0
     mov     x16, #1         // exit syscall
     svc     #0x80
+    ret
 
 // Built-in: echo
 // x0 = token array, x1 = token count
