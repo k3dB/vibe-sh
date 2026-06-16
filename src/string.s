@@ -72,8 +72,7 @@ strlen_loop:
 strlen_done:
     ret
 
-.section __DATA, __data
-.p2align 2
+.section __TEXT, __cstring
 
 str_exit:
     .asciz "exit"

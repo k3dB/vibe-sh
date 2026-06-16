@@ -74,11 +74,9 @@ exit_shell:
     // Exit
     mov     x0, #0         // exit status
     mov     x16, #1        // exit syscall
-    svc     #0x80
-    ret
+    svc     #0x80          // Exits the process, no code runs after this
 
-.section __DATA, __data
-.p2align 2
+.section __TEXT, __cstring
 
 prompt:
     .asciz "$$ "

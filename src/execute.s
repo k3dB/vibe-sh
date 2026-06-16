@@ -79,14 +79,14 @@ builtin_echo_setup:
     mov     x0, x19
     mov     x1, x20
     bl      builtin_echo
-    ret
+    b       execute_done
 
 builtin_cd_setup:
     mov     x0, x19
     mov     x1, x20
     mov     x2, x21
     bl      builtin_cd
-    ret
+    b       execute_done
 
 // Built-in: exit
 builtin_exit:
@@ -101,8 +101,7 @@ builtin_exit:
     // Exit with code 0
     mov     x0, #0
     mov     x16, #1         // exit syscall
-    svc     #0x80
-    ret
+    svc     #0x80           // Exits the process, no code runs after this
 
 // Built-in: echo
 // x0 = token array, x1 = token count
@@ -157,8 +156,7 @@ builtin_echo_done:
     mov     x2, #1
     mov     x16, #4         // write syscall
     svc     #0x80
-
-    ret
+    b       execute_done
 
 // Built-in: pwd
 builtin_pwd:
@@ -167,7 +165,7 @@ builtin_pwd:
     mov     x0, #1
     adrp    x1, pwd_placeholder@PAGE
     add     x1, x1, pwd_placeholder@PAGEOFF
-    mov     x2, #14
+    mov     x2, #18
     mov     x16, #4         // write syscall
     svc     #0x80
 
@@ -178,8 +176,7 @@ builtin_pwd:
     mov     x2, #1
     mov     x16, #4         // write syscall
     svc     #0x80
-
-    ret
+    b       execute_done
 
 // Built-in: cd
 // x0 = token array, x1 = token count, x2 = path buffer
@@ -196,7 +193,7 @@ builtin_cd:
     mov     x2, #26
     mov     x16, #4         // write syscall
     svc     #0x80
-    ret
+    b       execute_done
 
 cd_has_arg:
     // Get the path argument
@@ -208,21 +205,17 @@ cd_has_arg:
 
     // Check for error
     cmp     x0, #0
-    beq     cd_done
+    beq     execute_done
 
     // Print error message
     mov     x0, #1
     adrp    x1, cd_error@PAGE
     add     x1, x1, cd_error@PAGEOFF
-    mov     x2, #26
+    mov     x2, #29
     mov     x16, #4         // write syscall
     svc     #0x80
 
-cd_done:
-    ret
-
-.section __DATA, __data
-.p2align 2
+.section __TEXT, __cstring
 
 newline:
     .asciz "\n"
