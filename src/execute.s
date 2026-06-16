@@ -17,64 +17,74 @@
 // x1 = token count
 // x2 = path buffer
 execute_command:
-    // x3 = token array
-    // x4 = token count
-    // x5 = path buffer
-    // x6 = command name
+    // x19 = token array
+    // x20 = token count
+    // x21 = path buffer
+    // x22 = command name
 
-    mov     x3, x0         // token array
-    mov     x4, x1         // token count
-    mov     x5, x2         // path buffer
+    // Prologue
+    stp     x29, x30, [sp, #-48]!
+    mov     x29, sp
+    stp     x19, x20, [sp, #16]
+    stp     x21, x22, [sp, #32]
+
+    mov     x19, x0         // token array
+    mov     x20, x1         // token count
+    mov     x21, x2         // path buffer
 
     // Check if token count is 0 (empty line)
-    cmp     x4, #0
+    cmp     x20, #0
     beq     execute_done
 
     // Get first token (command name)
-    ldr     x6, [x3]
+    ldr     x22, [x19]
 
     // Check for exit built-in
-    mov     x0, x6
+    mov     x0, x22
     bl      strcmp_exit
     cmp     x0, #0
     beq     builtin_exit
 
     // Check for echo built-in
-    mov     x0, x6
+    mov     x0, x22
     bl      strcmp_echo
     cmp     x0, #0
     beq     builtin_echo_setup
 
     // Check for pwd built-in
-    mov     x0, x6
+    mov     x0, x22
     bl      strcmp_pwd
     cmp     x0, #0
     beq     builtin_pwd
 
     // Check for cd built-in
-    mov     x0, x6
+    mov     x0, x22
     bl      strcmp_cd
     cmp     x0, #0
     beq     builtin_cd_setup
 
     // Not a built-in, execute external command
-    mov     x0, x3
-    mov     x1, x4
+    mov     x0, x19
+    mov     x1, x20
     bl      execute_external
 
 execute_done:
+    // Epilogue
+    ldp     x21, x22, [sp, #32]
+    ldp     x19, x20, [sp, #16]
+    ldp     x29, x30, [sp], #48
     ret
 
 builtin_echo_setup:
-    mov     x0, x3
-    mov     x1, x4
+    mov     x0, x19
+    mov     x1, x20
     bl      builtin_echo
     ret
 
 builtin_cd_setup:
-    mov     x0, x3
-    mov     x1, x4
-    mov     x2, x5
+    mov     x0, x19
+    mov     x1, x20
+    mov     x2, x21
     bl      builtin_cd
     ret
 
@@ -85,7 +95,7 @@ builtin_exit:
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
     mov     x2, #1
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
 
     // Exit with code 0
@@ -120,7 +130,7 @@ builtin_echo_loop:
     mov     x0, #1
     mov     x1, x3
     mov     x2, x4
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
 
     // Print space if not last token
@@ -132,7 +142,7 @@ builtin_echo_loop:
     adrp    x1, space@PAGE
     add     x1, x1, space@PAGEOFF
     mov     x2, #1
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
 
 builtin_echo_next:
@@ -145,7 +155,7 @@ builtin_echo_done:
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
     mov     x2, #1
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
 
     ret
@@ -158,7 +168,7 @@ builtin_pwd:
     adrp    x1, pwd_placeholder@PAGE
     add     x1, x1, pwd_placeholder@PAGEOFF
     mov     x2, #14
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
 
     // Print newline
@@ -166,7 +176,7 @@ builtin_pwd:
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
     mov     x2, #1
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
 
     ret
@@ -184,7 +194,7 @@ builtin_cd:
     adrp    x1, cd_error@PAGE
     add     x1, x1, cd_error@PAGEOFF
     mov     x2, #26
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
     ret
 
@@ -205,7 +215,7 @@ cd_has_arg:
     adrp    x1, cd_error@PAGE
     add     x1, x1, cd_error@PAGEOFF
     mov     x2, #26
-    mov     x16, #4
+    mov     x16, #4         // write syscall
     svc     #0x80
 
 cd_done:
