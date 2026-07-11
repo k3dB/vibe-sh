@@ -23,10 +23,10 @@ execute_command:
     // x22 = command name
 
     // Prologue
-    stp     x29, x30, [sp, #-48]!
-    mov     x29, sp
-    stp     x19, x20, [sp, #16]
-    stp     x21, x22, [sp, #32]
+    stp     x29, x30, [sp, #-16]! // Preserve FP and LR
+    mov     x29, sp               // Set up new FP
+    stp     x19, x20, [sp, #-16]! // Preserve callee-saved registers
+    stp     x21, x22, [sp, #-16]!
 
     mov     x19, x0         // token array
     mov     x20, x1         // token count
@@ -70,9 +70,9 @@ execute_command:
 
 execute_done:
     // Epilogue
-    ldp     x21, x22, [sp, #32]
-    ldp     x19, x20, [sp, #16]
-    ldp     x29, x30, [sp], #48
+    ldp     x21, x22, [sp], #16 // Restore callee-saved registers
+    ldp     x19, x20, [sp], #16
+    ldp     x29, x30, [sp], #16 // Restore FP and LR
     ret
 
 builtin_echo_setup:
@@ -132,14 +132,14 @@ builtin_echo_loop:
     mov     x16, #4         // write syscall
     svc     #0x80
 
-    // Print space if not last token
+    // Print token separator if not last token
     add     x5, x2, #1
     cmp     x5, x1
     bge     builtin_echo_next
 
     mov     x0, #1
-    adrp    x1, space@PAGE
-    add     x1, x1, space@PAGEOFF
+    adrp    x1, separator@PAGE
+    add     x1, x1, separator@PAGEOFF
     mov     x2, #1
     mov     x16, #4         // write syscall
     svc     #0x80
@@ -219,7 +219,7 @@ cd_has_arg:
 
 newline:
     .asciz "\n"
-space:
+separator:
     .asciz " "
 pwd_placeholder:
     .asciz "/current/directory"
