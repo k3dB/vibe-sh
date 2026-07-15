@@ -35,8 +35,7 @@ _main:
     mov     x3, x0
 
     // Check for EOF (read returns 0)
-    cmp     x3, #0
-    beq     exit_shell
+    cbz     x3, exit_shell
 
     // Check for error (read returns -1)
     cmp     x3, #-1
@@ -50,7 +49,7 @@ _main:
     adrp    x1, token_array@PAGE
     add     x1, x1, token_array@PAGEOFF
     bl      parse_command
-    mov     x6, x0         // x6 = token count
+    mov     x3, x0         // token count
 
     // Execute the command
     // x0 = token array, x1 = token count, x2 = path buffer
@@ -60,6 +59,9 @@ _main:
     adrp    x2, path_buffer@PAGE
     add     x2, x2, path_buffer@PAGEOFF
     bl      execute_command
+
+    mov     x3, x0         // Copy return code for potential exit
+    cbnz    x1, exit_shell // Exit if exit flag is set
 
     b       _main          // Loop back to display prompt
 
@@ -75,7 +77,7 @@ exit_shell:
     ldr     x30, [sp], #16 // Restore LR
 
     // Exit
-    mov     x0, #0         // exit status
+    mov     x0, x3         // exit status
     mov     x16, #1        // exit syscall
     svc     #0x80          // Exits the process, no code runs after this
 

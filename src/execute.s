@@ -65,6 +65,8 @@ execute_command:
     bl      execute_external
 
 execute_done:
+    mov     x0, xzr         // Return success
+    mov     x1, xzr         // Clear exit flag
     // Epilogue
     ldp     x21, x22, [sp], #16 // Restore callee-saved registers
     ldp     x19, x20, [sp], #16
@@ -86,18 +88,13 @@ builtin_cd_setup:
 
 // Built-in: exit
 builtin_exit:
-    // Print newline before exit
-    mov     x0, #1
-    adrp    x1, newline@PAGE
-    add     x1, x1, newline@PAGEOFF
-    mov     x2, #1
-    mov     x16, #4         // write syscall
-    svc     #0x80
-
-    // Exit with code 0
-    mov     x0, #0
-    mov     x16, #1         // exit syscall
-    svc     #0x80           // Exits the process, no code runs after this
+    mov     x0, xzr             // Return success
+    mov     x1, #1              // Set exit flag
+    // Epilogue
+    ldp     x21, x22, [sp], #16 // Restore callee-saved registers
+    ldp     x19, x20, [sp], #16
+    ldp     x29, x30, [sp], #16 // Restore FP and LR
+    ret
 
 // Built-in: echo
 // x0 = token array, x1 = token count
