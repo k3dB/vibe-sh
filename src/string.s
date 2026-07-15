@@ -62,11 +62,9 @@ strlen:
     mov     x0, #0
 
 strlen_loop:
-    ldrb    w2, [x1]
-    cmp     w2, #0
-    beq     strlen_done
+    ldrb    w2, [x1], #1
+    cbz     w2, strlen_done
     add     x0, x0, #1
-    add     x1, x1, #1
     b       strlen_loop
 
 strlen_done:
