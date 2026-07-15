@@ -42,26 +42,22 @@ execute_command:
     // Check for exit built-in
     mov     x0, x22
     bl      strcmp_exit
-    cmp     x0, #0
-    beq     builtin_exit
+    cbz     x0, builtin_exit
 
     // Check for echo built-in
     mov     x0, x22
     bl      strcmp_echo
-    cmp     x0, #0
-    beq     builtin_echo_setup
+    cbz     x0, builtin_echo_setup
 
     // Check for pwd built-in
     mov     x0, x22
     bl      strcmp_pwd
-    cmp     x0, #0
-    beq     builtin_pwd
+    cbz     x0, builtin_pwd
 
     // Check for cd built-in
     mov     x0, x22
     bl      strcmp_cd
-    cmp     x0, #0
-    beq     builtin_cd_setup
+    cbz     x0, builtin_cd_setup
 
     // Not a built-in, execute external command
     mov     x0, x19
