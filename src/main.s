@@ -61,8 +61,7 @@ _main:
     add     x2, x2, path_buffer@PAGEOFF
     bl      execute_command
 
-    // Loop back to display prompt
-    b       _main
+    b       _main          // Loop back to display prompt
 
 exit_shell:
     // Print newline before exit

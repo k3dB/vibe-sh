@@ -10,61 +10,45 @@
 // x1 = token array (array of pointers)
 // returns x0 = number of tokens
 parse_command:
-    // x2 = input buffer (read pointer)
-    // x3 = token array
-    // x4 = token count
-    // x5 = in_token flag (0 = not in token, 1 = in token)
-    // x6 = current character
-
-    mov     x2, x0         // x2 = input buffer (read pointer)
-    mov     x3, x1         // x3 = token array
-    mov     x4, #0         // x4 = token count
-    mov     x5, #0         // x5 = in_token flag
+    mov     x3, #0               // token count
+    mov     x4, #0               // in_token flag
 
 parse_loop:
-    ldrb    w6, [x2]       // Load character (don't advance yet)
-    cmp     w6, #0
-    beq     parse_done     // End of string
+    ldrb    w5, [x0]             // Load character (do not advance yet)
+    cbz     w5, parse_done       // End of input?
 
     // Check for space or newline
-    cmp     w6, #32
+    cmp     w5, #' '
     beq     parse_space
-    cmp     w6, #10
+    cmp     w5, #'\n'
     beq     parse_space
 
-    // Regular character
-    cmp     x5, #0
-    bne     parse_in_token  // Already in token
+    cbnz    x4, parse_in_token   // Already in token?
 
     // Start of new token
-    str     x2, [x3, x4, lsl #3]  // Store pointer to current position
-    add     x4, x4, #1            // Increment token count
-    mov     x5, #1                // Set in_token flag
-    add     x2, x2, #1            // Advance read pointer
+    str     x0, [x1, x3, lsl #3] // Store pointer to current position
+    add     x3, x3, #1           // Increment token count
+    mov     x4, #1               // Set in_token flag
+    add     x0, x0, #1           // Advance read pointer
     b       parse_loop
 
 parse_in_token:
-    add     x2, x2, #1     // Advance read pointer
+    add     x0, x0, #1           // Advance read pointer
     b       parse_loop
 
 parse_space:
-    add     x2, x2, #1     // Advance read pointer
-    cmp     x5, #0
-    beq     parse_loop     // Not in token, just skip
+    add     x0, x0, #1           // Advance read pointer
+    cbz     x4, parse_loop       // Not in token?
 
     // End of token - null-terminate it
-    strb    wzr, [x2, #-1] // Null-terminate at previous position
-    mov     x5, #0         // Clear in_token flag
+    strb    wzr, [x0, #-1]       // Null-terminate at previous position
+    mov     x4, #0               // Clear in_token flag
     b       parse_loop
 
 parse_done:
-    // Check if we were in a token at the end
-    cmp     x5, #0
-    beq     parse_return
-
-    // Null-terminate the last token
-    strb    wzr, [x2, #-1]
+    cbz     x4, parse_return     // Check if we were in a token at the end
+    strb    wzr, [x0, #-1]       // Null-terminate the last token
 
 parse_return:
-    mov     x0, x4         // Return token count
+    mov     x0, x3               // Return token count
     ret
