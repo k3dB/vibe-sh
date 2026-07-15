@@ -13,6 +13,8 @@
 .globl _main
 
 _main:
+    str     x30, [sp, #-16]!             // Save LR
+
     // Display prompt "$$ "
     mov     x0, #1                       // stdout
     adrp    x1, prompt@PAGE
@@ -70,6 +72,8 @@ exit_shell:
     mov     x2, #1
     mov     x16, #4
     svc     #0x80
+
+    ldr     x30, [sp], #16 // Restore LR
 
     // Exit
     mov     x0, #0         // exit status
