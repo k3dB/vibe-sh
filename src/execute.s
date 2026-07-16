@@ -27,6 +27,7 @@ execute_command:
     mov     x29, sp               // Set up new FP
     stp     x19, x20, [sp, #-16]! // Preserve callee-saved registers
     stp     x21, x22, [sp, #-16]!
+    stp     x23, x24, [sp, #-16]! // For echo
 
     mov     x19, x0         // token array
     mov     x20, x1         // token count
@@ -68,6 +69,7 @@ execute_done:
     mov     x0, xzr         // Return success
     mov     x1, xzr         // Clear exit flag
     // Epilogue
+    ldp     x23, x24, [sp], #16 // Restore callee-saved registers
     ldp     x21, x22, [sp], #16 // Restore callee-saved registers
     ldp     x19, x20, [sp], #16
     ldp     x29, x30, [sp], #16 // Restore FP and LR
@@ -91,62 +93,61 @@ builtin_exit:
     mov     x0, xzr             // Return success
     mov     x1, #1              // Set exit flag
     // Epilogue
+    ldp     x23, x24, [sp], #16 // Restore callee-saved registers
     ldp     x21, x22, [sp], #16 // Restore callee-saved registers
     ldp     x19, x20, [sp], #16
     ldp     x29, x30, [sp], #16 // Restore FP and LR
     ret
 
 // Built-in: echo
-// x0 = token array, x1 = token count
 builtin_echo:
-    // Use temporary registers
-    // x2 = current token index
-    // x3 = token pointer
-    // x4 = token length
+    // x20 = token count
+    // x22 = first token (command name)
+    // x23 = current token index
+    // x24 = token pointer
 
-    mov     x2, #1          // Start from token 1 (skip "echo")
+    mov     x23, #1         // Start from token 1 (skip "echo")
 
 builtin_echo_loop:
-    cmp     x2, x1
+    cmp     x23, x20        // Compare current index with token count
     bge     builtin_echo_done
 
     // Get token pointer
-    ldr     x3, [x0, x2, lsl #3]
+    ldr     x24, [x0, x23, lsl #3]
 
     // Calculate token length
-    mov     x0, x3
+    mov     x0, x24
     bl      strlen
-    mov     x4, x0
 
     // Print token
-    mov     x0, #1
-    mov     x1, x3
-    mov     x2, x4
+    mov     x2, x0          // Token length
+    mov     x0, #1          // stdout
+    mov     x1, x24         // Token pointer
     mov     x16, #4         // write syscall
     svc     #0x80
 
     // Print token separator if not last token
-    add     x5, x2, #1
-    cmp     x5, x1
+    add     x5, x23, #1     // Next token index
+    cmp     x5, x20         // Compare with token count
     bge     builtin_echo_next
 
-    mov     x0, #1
+    mov     x0, #1          // stdout
     adrp    x1, separator@PAGE
     add     x1, x1, separator@PAGEOFF
-    mov     x2, #1
+    mov     x2, #1          // Separator length
     mov     x16, #4         // write syscall
     svc     #0x80
 
 builtin_echo_next:
-    add     x2, x2, #1
+    add     x23, x23, #1    // Increment current token index
     b       builtin_echo_loop
 
 builtin_echo_done:
     // Print newline
-    mov     x0, #1
+    mov     x0, #1          // stdout
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
-    mov     x2, #1
+    mov     x2, #1          // Newline length
     mov     x16, #4         // write syscall
     svc     #0x80
     b       execute_done
@@ -155,18 +156,18 @@ builtin_echo_done:
 builtin_pwd:
     // For now, just print a placeholder since getcwd is not a direct syscall on macOS
     // In a real implementation, we'd call the libc getcwd function
-    mov     x0, #1
+    mov     x0, #1          // stdout
     adrp    x1, pwd_placeholder@PAGE
     add     x1, x1, pwd_placeholder@PAGEOFF
-    mov     x2, #18
+    mov     x2, #18         // Placeholder length
     mov     x16, #4         // write syscall
     svc     #0x80
 
     // Print newline
-    mov     x0, #1
+    mov     x0, #1          // stdout
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
-    mov     x2, #1
+    mov     x2, #1          // Newline length
     mov     x16, #4         // write syscall
     svc     #0x80
     b       execute_done
@@ -180,10 +181,10 @@ builtin_cd:
 
     // No argument, go to HOME directory
     // For now, just print error
-    mov     x0, #1
+    mov     x0, #1          // stdout
     adrp    x1, cd_error@PAGE
     add     x1, x1, cd_error@PAGEOFF
-    mov     x2, #26
+    mov     x2, #26         // Error message length
     mov     x16, #4         // write syscall
     svc     #0x80
     b       execute_done
@@ -201,10 +202,10 @@ cd_has_arg:
     beq     execute_done
 
     // Print error message
-    mov     x0, #1
+    mov     x0, #1          // stdout
     adrp    x1, cd_error@PAGE
     add     x1, x1, cd_error@PAGEOFF
-    mov     x2, #29
+    mov     x2, #29         // Error message length
     mov     x16, #4         // write syscall
     svc     #0x80
 
