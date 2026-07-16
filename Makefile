@@ -6,10 +6,14 @@ BUILD_DIR = build
 BIN_DIR = bin
 
 # Source files
-SOURCES = $(wildcard $(SRC_DIR)/*.s)
+SRC_SOURCES = $(wildcard $(SRC_DIR)/*.s)
+BUILTIN_SOURCES = $(wildcard $(SRC_DIR)/built-ins/*.s)
+SOURCES = $(SRC_SOURCES) $(BUILTIN_SOURCES)
 
 # Object files
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.s=$(BUILD_DIR)/%.o)
+SRC_OBJECTS = $(SRC_SOURCES:$(SRC_DIR)/%.s=$(BUILD_DIR)/%.o)
+BUILTIN_OBJECTS = $(BUILTIN_SOURCES:$(SRC_DIR)/built-ins/%.s=$(BUILD_DIR)/built-ins/%.o)
+OBJECTS = $(SRC_OBJECTS) $(BUILTIN_OBJECTS)
 
 # Executable
 TARGET = $(BIN_DIR)/shell
@@ -27,10 +31,14 @@ all: directories $(TARGET)
 # Create directories
 directories:
 	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)/built-ins
 	@mkdir -p $(BIN_DIR)
 
 # Assemble source files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
+	$(AS) -o $@ $<
+
+$(BUILD_DIR)/built-ins/%.o: $(SRC_DIR)/built-ins/%.s
 	$(AS) -o $@ $<
 
 # Link object files
