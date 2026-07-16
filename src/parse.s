@@ -10,8 +10,8 @@
 // x1 = token array (array of pointers)
 // returns x0 = number of tokens
 parse_command:
-    mov     x3, #0               // token count
-    mov     x4, #0               // in_token flag
+    mov     x3, xzr              // token count
+    mov     x4, xzr              // in_token flag
 
 parse_loop:
     ldrb    w5, [x0]             // Load character (do not advance yet)
@@ -42,7 +42,7 @@ parse_space:
 
     // End of token - null-terminate it
     strb    wzr, [x0, #-1]       // Null-terminate at previous position
-    mov     x4, #0               // Clear in_token flag
+    mov     x4, xzr              // Clear in_token flag
     b       parse_loop
 
 parse_done:
