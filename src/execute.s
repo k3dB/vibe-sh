@@ -64,7 +64,7 @@ execute_done:
     mov     x0, xzr         // Return success
     mov     x1, xzr         // Clear exit flag
 
-.epilogue:
+execute.epilogue:
     ldp     x21, x22, [sp], #16 // Restore callee-saved registers
     ldp     x19, x20, [sp], #16
     ldp     x29, x30, [sp], #16 // Restore FP and LR
@@ -73,7 +73,7 @@ execute_done:
 exit:
     mov     x0, x19
     mov     x1, x20
-    b       .epilogue
+    b       execute.epilogue
 
 echo:
     mov     x0, x19
