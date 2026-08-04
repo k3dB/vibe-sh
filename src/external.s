@@ -17,7 +17,7 @@ execute_external:
     mov     x20, x1         // token count
 
     // Fork the process
-    mov     x16, #66        // fork syscall
+    mov     x16, #2
     svc     #0x80
 
     // Check if we're in child process (x0 == 0)
@@ -33,7 +33,7 @@ execute_external:
     mov     x0, #-1         // wait for any child
     mov     x2, #0          // options
     mov     x3, #0          // rusage
-    mov     x16, #73        // wait4 syscall
+    mov     x16, #7         // wait4 syscall
     svc     #0x80
 
     add     sp, sp, #8
@@ -77,9 +77,12 @@ argv_copy_done:
     // Restore x0 (path)
     mov     x0, x9
 
-    // x2 = envp (NULL for now)
+    // Prepare envp array
+    // For now, pass NULL envp to avoid stack corruption issues
+    // We'll implement proper PATH passing after fixing the basic execve
     mov     x2, #0
 
+execve_call:
     // execve syscall
     mov     x16, #59        // execve syscall
     svc     #0x80
