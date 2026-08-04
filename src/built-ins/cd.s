@@ -30,7 +30,7 @@ cd_has_arg:
     ldr     x0, [x0, #8]
 
     // chdir syscall
-    mov     x16, #12        // chdir syscall number
+    mov     x16, #12        // chdir syscall
     svc     #0x80
 
     // Check for error
