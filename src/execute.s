@@ -71,8 +71,8 @@ execute.epilogue:
     ret
 
 exit:
-    mov     x0, x19
-    mov     x1, x20
+    mov     x0, xzr         // Return success
+    mov     x1, #1          // Set exit flag
     b       execute.epilogue
 
 echo:
