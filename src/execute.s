@@ -24,13 +24,13 @@ execute_command:
     stp     x19, x20, [sp, #-16]! // Preserve callee-saved registers
     stp     x21, x22, [sp, #-16]!
 
-    mov     x19, x0         // token array
-    mov     x20, x1         // token count
-    mov     x21, x2         // path buffer
+    mov     x19, x0               // token array
+    mov     x20, x1               // token count
+    mov     x21, x2               // path buffer
 
     // Check if token count is 0 (empty line)
     cmp     x20, #0
-    beq     execute_done
+    beq     execute_success
 
     // Get first token (command name)
     ldr     x22, [x19]
@@ -59,35 +59,37 @@ execute_command:
     mov     x0, x19
     mov     x1, x20
     bl      execute_external
+    b       execute_end           // Return external command result
 
-execute_done:
-    mov     x0, xzr         // Return success
-    mov     x1, xzr         // Clear exit flag
+execute_success:
+    mov     x0, #0                // Return success
+execute_end:
+    mov     x1, #0                // Clear exit flag
 
 execute.epilogue:
-    ldp     x21, x22, [sp], #16 // Restore callee-saved registers
+    ldp     x21, x22, [sp], #16   // Restore callee-saved registers
     ldp     x19, x20, [sp], #16
-    ldp     x29, x30, [sp], #16 // Restore FP and LR
+    ldp     x29, x30, [sp], #16   // Restore FP and LR
     ret
 
 exit:
-    mov     x0, xzr         // Return success
-    mov     x1, #1          // Set exit flag
+    mov     x0, #0                // Return success
+    mov     x1, #1                // Set exit flag
     b       execute.epilogue
 
 echo:
     mov     x0, x19
     mov     x1, x20
     bl      builtin_echo
-    b       execute_done
+    b       execute_success
 
 pwd:
     bl      builtin_pwd
-    b       execute_done
+    b       execute_success
 
 cd:
     mov     x0, x19
     mov     x1, x20
     mov     x2, x21
     bl      builtin_cd
-    b       execute_done
+    b       execute_success

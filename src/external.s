@@ -1,6 +1,22 @@
 // ARM64v8 Shell for macOS
 // External command execution module (fork/execve)
 
+.section __DATA, __bss
+.globl wait_status
+.p2align 3
+wait_status:
+    .space 8
+
+.globl argv_buffer
+.p2align 4
+argv_buffer:
+    .space 2048
+
+.globl envp_buffer
+.p2align 3
+envp_buffer:
+    .space 256
+
 .section __TEXT, __text, regular, pure_instructions
 .p2align 2
 .globl execute_external
@@ -8,9 +24,6 @@
 // Execute external command
 // x0 = token array
 // x1 = token count
-
-// extern char **environ
-//.extern _environ
 
 execute_external:
     stp     x29, x30, [sp, #-32]!
@@ -20,47 +33,55 @@ execute_external:
     mov     x19, x0              // tokens
     mov     x20, x1              // token count
 
-    mov     x16, #2              // fork
+    mov     x16, #2              // fork syscall
     svc     #0x80
 
-    cmp     x0, #0
-    blt     fork_failed
+    cbz     x1, wait_for_child   // Darwin returns 0 in x1 for parent process
+    cmp     x1, #1               // Darwin returns 1 in x1 for child process
     beq     exec_child
 
-    // Parent process
-    mov     x19, x0              // save child PID
-
-    // Reserve 16 bytes to preserve alignment
-    sub     sp, sp, #16
-
-    mov     x0, x19              // pid
-    mov     x1, sp               // status
-    mov     x2, #0               // options
-    mov     x3, #0               // rusage
-
-    mov     x16, #7              // wait4
-    svc     #0x80
-
-    add     sp, sp, #16
-
+failure:
+    mov     x0, #-1              // failure
+    b       return
+success:
+    mov     x0, #0               // success
+return:
     ldp     x19, x20, [sp, #16]
     ldp     x29, x30, [sp], #32
     ret
 
+wait_for_child:
+    adrp    x1, wait_status@PAGE
+    add     x1, x1, wait_status@PAGEOFF
+    mov     x2, #0               // options
+    mov     x3, #0               // rusage
+    mov     x16, #7              // wait4 syscall
+    svc     #0x80
+
+    cmp     x0, #0               // check if wait4 failed
+    blt     failure
+
+    adrp    x1, wait_status@PAGE // Load and check wait status
+    add     x1, x1, wait_status@PAGEOFF
+    ldr     w1, [x1]
+
+    and     w2, w1, #0x7f        // Check if terminated by signal
+    cbnz    w2, failure
+
+    lsr     w2, w1, #8           // Extract exit status
+    and     w2, w2, #0xff        // Mask to 8 bits
+    cbnz    w2, failure
+
+    b       success
+    // ^^^ End of parent code
+
 exec_child:
+    // Get executable path
     ldr     x0, [x19]            // executable path
 
-    // Allocate argv[]
-    add     x9, x20, #1          // argc + NULL
-    lsl     x9, x9, #3           // bytes
-
-    // Round up to 16-byte alignment
-    add     x9, x9, #15
-    bic     x9, x9, #15
-
-    sub     sp, sp, x9
-
-    mov     x1, sp               // argv
+    // Use argv_buffer for argv[]
+    adrp    x1, argv_buffer@PAGE
+    add     x1, x1, argv_buffer@PAGEOFF
 
     // Copy pointers
     mov     x10, x1              // dst
@@ -79,23 +100,20 @@ copy_loop:
 copy_done:
     str     xzr, [x10]
 
-    // envp = _environ
-    // adrp    x2, _environ@PAGE
-    // ldr     x2, [x2, _environ@PAGEOFF]
-    mov     x2, xzr              // NULL environment for now
+    // Set up empty envp (array with single NULL pointer)
+    adrp    x2, envp_buffer@PAGE
+    add     x2, x2, envp_buffer@PAGEOFF
+    str     xzr, [x2]            // envp[0] = NULL
 
     // execve(path, argv, environ)
-    mov     x16, #59
+    mov     x16, #59             // execve syscall
     svc     #0x80
 
-    // execve failed
-    add     sp, sp, x9           // restore stack
-    mov     x0, #127             // shell convention
-    mov     x16, #1              // exit
-    svc     #0x80
+    // execve failed - terminate child process with error code
+    mov     x1, #127             // ENOENT (No such file or directory)
+    mov     x2, #126             // EACCES (Permission denied)
+    cmp     x0, #2               // Darwin returns 2 for ENOENT
+    csel    x0, x1, x2, eq
 
-fork_failed:
-    mov     x0, #-1
-    ldp     x19, x20, [sp, #16]
-    ldp     x29, x30, [sp], #32
-    ret
+    mov     x16, #1              // exit syscall
+    svc     #0x80

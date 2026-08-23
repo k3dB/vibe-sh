@@ -13,37 +13,39 @@
 .globl _main
 
 _main:
+    stp     x19, x20, [sp, #-16]! // x19 = return code
+
     // Display prompt "$$ "
-    mov     x0, #1            // stdout
+    mov     x0, #1                // stdout
     adrp    x1, prompt@PAGE
     add     x1, x1, prompt@PAGEOFF
-    mov     x2, #3            // length of "$$ "
-    mov     x16, #4           // write syscall
+    mov     x2, #3                // length of "$$ "
+    mov     x16, #4               // write syscall
     svc     #0x80
 
     // Read user input
-    mov     x0, #0            // stdin
+    mov     x0, #0                // stdin
     adrp    x1, input_buffer@PAGE
     add     x1, x1, input_buffer@PAGEOFF
     mov     x2, #INPUT_BUFFER_SIZE
-    mov     x16, #3           // read syscall
+    mov     x16, #3               // read syscall
     svc     #0x80
 
-    mov     x3, x0            // Save the read length
-    cbz     x3, exit_shell    // Check for EOF (read returns 0)
+    mov     x3, x0                // Save the read length
+    cbz     x3, exit_shell        // Check for EOF (read returns 0)
 
-    cmp     x3, #-1           // Check for error (read returns -1)
+    cmp     x3, #-1               // Check for error (read returns -1)
     beq     exit_shell
 
     // Parse the command
     // x0 = input buffer, x1 = token array, returns x0 = token count
     adrp    x0, input_buffer@PAGE
     add     x0, x0, input_buffer@PAGEOFF
-    strb    wzr, [x0, x3]     // Null-terminate the input
+    strb    wzr, [x0, x3]         // Null-terminate the input
     adrp    x1, token_array@PAGE
     add     x1, x1, token_array@PAGEOFF
     bl      parse_command
-    mov     x3, x0            // token count
+    mov     x3, x0                // token count
 
     // Execute the command
     // x0 = token array, x1 = token count, x2 = path buffer
@@ -54,24 +56,26 @@ _main:
     add     x2, x2, path_buffer@PAGEOFF
     bl      execute_command
 
-    mov     x3, x0            // Copy return code for potential exit
-    cbnz    x1, exit_shell    // Exit if exit flag is set
+    mov     x19, x0               // Copy return code for potential exit
+    cbnz    x1, exit_shell        // Exit if exit flag is set
 
-    b       _main             // Loop back to display prompt
+    b       _main                 // Loop back to display prompt
 
 exit_shell:
     // Print newline before exit
-    mov     x0, #1            // stdout
+    mov     x0, #1                // stdout
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
-    mov     x2, #1            // length of newline
-    mov     x16, #4           // write syscall
+    mov     x2, #1                // length of newline
+    mov     x16, #4               // write syscall
     svc     #0x80
 
     // Exit
-    mov     x0, x3            // exit status
-    mov     x16, #1           // exit syscall
-    svc     #0x80             // Exits the process, no code runs after this
+    mov     x0, x19               // exit status
+    ldp     x19, x20, [sp], #16   // Restore callee-saved registers
+
+    mov     x16, #1               // exit syscall
+    svc     #0x80                 // Exits the process, no code runs after this
 
 .section __TEXT, __cstring
 
