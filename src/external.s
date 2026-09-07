@@ -42,10 +42,10 @@ execute_external:
 
 failure:
     mov     x0, #-1              // failure
-    b       return
+    b       execute_external_end
 success:
     mov     x0, #0               // success
-return:
+execute_external_end:
     ldp     x19, x20, [sp, #16]
     ldp     x29, x30, [sp], #32
     ret
@@ -109,11 +109,11 @@ copy_done:
     mov     x16, #59             // execve syscall
     svc     #0x80
 
-    // execve failed - terminate child process with error code
-    mov     x1, #127             // ENOENT (No such file or directory)
-    mov     x2, #126             // EACCES (Permission denied)
-    cmp     x0, #2               // Darwin returns 2 for ENOENT
-    csel    x0, x1, x2, eq
+    // execve failed - terminate child process with returned status
+
+    // x0 already contains error code from execve
+    ldr     x1, [x19]            // command name from tokens[0]
+    bl      handle_exec_error    // Returns exit status code in x0
 
     mov     x16, #1              // exit syscall
     svc     #0x80
