@@ -3,48 +3,44 @@
 
 .section __TEXT, __text, regular, pure_instructions
 .p2align 2
-.globl get_parent_path
+.globl find_path
 
 // Get parent process environment and extract PATH
 // Returns pointer to PATH string in x0, or NULL if not found
-// Uses a static buffer to store the PATH
-get_parent_path:
-    stp     x29, x30, [sp, #-32]!
-    mov     x29, sp
-    stp     x19, x20, [sp, #16]
+find_path:
+    mov     x2, #0                // envp index
 
-    // For now, use a hardcoded default PATH for macOS
-    // This allows external commands to work while we debug sysctl
-    adrp    x0, default_path@PAGE
-    add     x0, x0, default_path@PAGEOFF
-    
-    // Copy default path to path_value buffer
-    adrp    x19, path_value@PAGE
-    add     x19, x19, path_value@PAGEOFF
-    mov     x20, x0         // source
+next_env:
+    ldr     x1, [x0, x2]          // load envp[i]
+    cbz     x1, not_found         // if NULL, PATH not found
+    add     x2, x2, #8            // next envp index
 
-copy_default_path:
-    ldrb    w0, [x20], #1
-    strb    w0, [x19], #1
-    cbnz    w0, copy_default_path
+    ldrb    w3, [x1]              // load first byte of envp[i]
+    cmp     w3, #'P'              // check if first byte is 'P'
+    bne     next_env              // if not, continue to next envp
 
-    // Return pointer to path_value
-    adrp    x0, path_value@PAGE
-    add     x0, x0, path_value@PAGEOFF
+    ldrb    w3, [x1, #1]          // load second byte of envp[i]
+    cmp     w3, #'A'              // check if second byte is 'A'
+    bne     next_env              // if not, continue to next envp
 
-get_parent_done:
-    ldp     x19, x20, [sp, #16]
-    ldp     x29, x30, [sp], #32
+    ldrb    w3, [x1, #2]          // load third byte of envp[i]
+    cmp     w3, #'T'              // check if third byte is 'T'
+    bne     next_env              // if not, continue to next envp
+
+    ldrb    w3, [x1, #3]          // load fourth byte of envp[i]
+    cmp     w3, #'H'              // check if fourth byte is 'H'
+    bne     next_env              // if not, continue to next envp
+
+    ldrb    w3, [x1, #4]          // load fifth byte of envp[i]
+    cmp     w3, #'='              // check if fifth byte is '='
+    bne     next_env              // if not, continue to next envp
+
+    // PATH found, return pointer to PATH value (after '=')
+    add     x0, x1, #5            // skip "PATH=" prefix
+    b       find_path_done
+
+not_found:
+    mov     x0, #0                // return NULL
+
+find_path_done:
     ret
-
-.section __TEXT, __cstring
-
-default_path:
-    .asciz "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-
-.section __DATA, __bss
-.p2align 3
-
-// Buffer to store PATH value
-path_value:
-    .space 4096

@@ -11,11 +11,11 @@
 // Execute command - check built-ins or execute external command
 // x0 = token array
 // x1 = token count
-// x2 = path buffer
+// x2 = path value pointer
 execute_command:
     // x19 = token array
     // x20 = token count
-    // x21 = path buffer
+    // x21 = path value pointer
     // x22 = command name
 
     // Prologue
@@ -26,14 +26,12 @@ execute_command:
 
     mov     x19, x0               // token array
     mov     x20, x1               // token count
-    mov     x21, x2               // path buffer
+    mov     x21, x2               // path value pointer
 
-    // Check if token count is 0 (empty line)
-    cmp     x20, #0
+    cmp     x20, #0               // Check if token count is 0 (empty line)
     beq     execute_success
 
-    // Get first token (command name)
-    ldr     x22, [x19]
+    ldr     x22, [x19]            // Get first token (command name)
 
     // Check for exit built-in
     mov     x0, x22
@@ -58,6 +56,7 @@ execute_command:
     // Not a built-in, execute external command
     mov     x0, x19
     mov     x1, x20
+    mov     x2, x21
     bl      execute_external
     b       execute_end           // Return external command result
 
@@ -90,6 +89,5 @@ pwd:
 cd:
     mov     x0, x19
     mov     x1, x20
-    mov     x2, x21
     bl      builtin_cd
     b       execute_success

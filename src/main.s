@@ -8,14 +8,17 @@
 .equ INPUT_BUFFER_SIZE, 256
 .equ MAX_TOKENS, 32
 .equ MAX_TOKEN_LENGTH, 128
-.equ PATH_MAX, 1024
 
 .globl _main
 
 _main:
-    stp     x19, x20, [sp, #-16]! // x19 = return code
+    stp     x19, x20, [sp, #-16]! // x19 = return code, x20 = path value pointer
 
-    // Display prompt "$$ "
+    mov     x0, x2                // envp
+    bl      find_path
+    mov     x20, x0               // Store PATH value pointer
+
+display_prompt:
     mov     x0, #1                // stdout
     adrp    x1, prompt@PAGE
     add     x1, x1, prompt@PAGEOFF
@@ -52,14 +55,13 @@ _main:
     adrp    x0, token_array@PAGE
     add     x0, x0, token_array@PAGEOFF
     mov     x1, x3
-    adrp    x2, path_buffer@PAGE
-    add     x2, x2, path_buffer@PAGEOFF
+    mov     x2, x20               // PATH value pointer
     bl      execute_command
 
     mov     x19, x0               // Copy return code for potential exit
     cbnz    x1, exit_shell        // Exit if exit flag is set
 
-    b       _main                 // Loop back to display prompt
+    b       display_prompt
 
 exit_shell:
     // Print newline before exit
@@ -96,7 +98,3 @@ input_buffer:
 // Token array (array of pointers to tokens)
 token_array:
     .space MAX_TOKENS * 8
-
-// Path buffer for pwd and cd
-path_buffer:
-    .space PATH_MAX

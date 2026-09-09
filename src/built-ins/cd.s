@@ -8,13 +8,13 @@
 // Built-in: cd
 // x0 = token array
 // x1 = token count
-// x2 = path buffer
 builtin_cd:
     // Check if argument provided
     cmp     x1, #1
     bgt     cd_has_arg
 
     // No argument, go to HOME directory
+    // TODO: Implement HOME directory logic
     // For now, just print error
     mov     x0, #1          // stdout
     adrp    x1, cd_error@PAGE
