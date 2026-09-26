@@ -90,20 +90,18 @@ wait_for_child:
 exec_child:
     // Get executable path
     ldr     x0, [x19]             // executable path
+    mov     x22, x0               // Save command name for later use
 
     // Resolve command path using PATH
     mov     x1, x21               // PATH pointer
     bl      resolve_command_path
 
-    // Check if path resolution failed
     cbnz    x0, setup_argv
 
     // Path resolution failed - use original command name
-    ldr     x0, [x19]             // original command name
+    mov     x0, x22               // original command name
 
 setup_argv:
-    mov     x22, x0               // save for error handling
-    // Use argv_buffer for argv[]
     adrp    x1, argv_buffer@PAGE
     add     x1, x1, argv_buffer@PAGEOFF
 

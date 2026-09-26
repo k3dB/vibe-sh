@@ -20,8 +20,8 @@ resolve_command_path:
     mov     x20, x1               // Save PATH pointer
 
     // Check if command name contains '/' (already a path)
-    mov     x1, x0                // Save command name in x1 for strchr
-    mov     w0, #'/'              // Load '/' character to find
+    // x0 already has string pointer (command name)
+    mov     w1, #'/'              // x1 = character to find ('/')
     bl      strchr                // Call strchr to find '/' in string
 
     // strchr returns pointer to '/' if found, or NULL (0) if not found
@@ -135,7 +135,7 @@ get_next_path_start:
 get_next_path_find_colon:
     // Use strchr to find next colon from current position
     mov     x0, x1                // String to search
-    mov     w0, #':'              // Character to find
+    mov     w1, #':'              // Character to find
     bl      strchr
 
     // x0 now contains pointer to colon, or NULL if not found
