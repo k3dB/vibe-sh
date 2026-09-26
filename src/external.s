@@ -91,6 +91,18 @@ exec_child:
     // Get executable path
     ldr     x0, [x19]             // executable path
 
+    // Resolve command path using PATH
+    mov     x1, x21               // PATH pointer
+    bl      resolve_command_path
+
+    // Check if path resolution failed
+    cbnz    x0, setup_argv
+
+    // Path resolution failed - use original command name
+    ldr     x0, [x19]             // original command name
+
+setup_argv:
+    mov     x22, x0               // save for error handling
     // Use argv_buffer for argv[]
     adrp    x1, argv_buffer@PAGE
     add     x1, x1, argv_buffer@PAGEOFF
@@ -124,7 +136,7 @@ token_copy_done:
     // execve failed - terminate child process with returned status
 
     // x0 already contains error code from execve
-    ldr     x1, [x19]             // command name from tokens[0]
+    mov     x1, x22               // resolved path for error message
     bl      handle_exec_error     // Returns exit status code in x0
 
     mov     x16, #1               // exit syscall
