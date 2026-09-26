@@ -9,6 +9,7 @@
 .globl strcmp_pwd
 .globl strcmp_cd
 .globl strlen
+.globl strchr
 
 // String comparison functions for built-in commands
 // x0 = string to compare
@@ -68,6 +69,26 @@ strlen_loop:
     b       strlen_loop
 
 strlen_done:
+    ret
+
+// Find character in string
+// x0 = string pointer, x1 = character to find
+// returns x0 = pointer to character, or NULL if not found
+strchr:
+    mov     x2, x0
+strchr_loop:
+    ldrb    w3, [x2], #1
+    cmp     w3, w1
+    beq     strchr_found
+    cbz     w3, strchr_not_found
+    b       strchr_loop
+
+strchr_found:
+    sub     x0, x2, #1
+    ret
+
+strchr_not_found:
+    mov     x0, #0
     ret
 
 .section __TEXT, __cstring
