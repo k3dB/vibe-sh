@@ -103,12 +103,10 @@ strchr:
     mov     x2, x0
 strchr_loop:
     ldrb    w3, [x2], #1
-    cmp     w3, w1
-    beq     strchr_found
     cbz     w3, strchr_not_found
-    b       strchr_loop
+    cmp     w3, w1
+    bne     strchr_loop
 
-strchr_found:
     sub     x0, x2, #1
     ret
 
