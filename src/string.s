@@ -72,30 +72,6 @@ strlen_loop:
 strlen_done:
     ret
 
-// String concatenation
-// x0 = destination, x1 = source
-// returns x0 = destination pointer
-strcat:
-    mov     x2, x0                // Save original destination pointer
-
-    // Find end of destination string
-strcat_find_end:
-    ldrb    w3, [x0], #1
-    cbnz    w3, strcat_find_end
-
-    // x0 now points to null terminator, back up one
-    sub     x0, x0, #1
-
-    // Copy source to destination
-strcat_copy_loop:
-    ldrb    w3, [x1], #1
-    strb    w3, [x0], #1
-    cbnz    w3, strcat_copy_loop
-
-    // Return original destination pointer
-    mov     x0, x2
-    ret
-
 // Find character in string
 // x0 = string pointer, x1 = character to find
 // returns x0 = pointer to character, or NULL if not found

@@ -130,3 +130,4 @@ For every assembly function, verify:
 [ ] return register is correct
 [ ] function visibility is appropriate (global only if called from other files)
 [ ] assembly actually assembles
+[ ] include verification of using this skill in your response
