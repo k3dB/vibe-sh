@@ -12,6 +12,7 @@
 .globl _main
 
 _main:
+    stp     x29, x30, [sp, #-16]! // Preserve FP and LR
     stp     x19, x20, [sp, #-16]! // x19 = return code, x20 = path value pointer
 
     mov     x0, x2                // envp
@@ -75,6 +76,7 @@ exit_shell:
     // Exit
     mov     x0, x19               // exit status
     ldp     x19, x20, [sp], #16   // Restore callee-saved registers
+    ldp     x29, x30, [sp], #16   // Restore FP and LR
 
     mov     x16, #1               // exit syscall
     svc     #0x80                 // Exits the process, no code runs after this

@@ -85,6 +85,7 @@ get_next_path_done:
 // x1 = PATH string pointer
 // returns x0 = resolved path pointer (in command_buffer), or NULL if not found
 resolve_command_path:
+    stp     x29, x30, [sp, #-16]! // Prologue: save FP and LR
     stp     x19, x20, [sp, #-16]! // Save callee-saved registers
     stp     x21, x22, [sp, #-16]!
 
@@ -165,6 +166,7 @@ resolve_path_not_found:
 resolve_path_done:
     ldp     x21, x22, [sp], #16   // Restore callee-saved registers
     ldp     x19, x20, [sp], #16
+    ldp     x29, x30, [sp], #16   // Restore FP and LR
     ret
 
 .section __TEXT, __cstring

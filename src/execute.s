@@ -20,7 +20,6 @@ execute_command:
 
     // Prologue
     stp     x29, x30, [sp, #-16]! // Preserve FP and LR
-    mov     x29, sp               // Set up new FP
     stp     x19, x20, [sp, #-16]! // Preserve callee-saved registers
     stp     x21, x22, [sp, #-16]!
 
