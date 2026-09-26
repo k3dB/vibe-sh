@@ -20,6 +20,7 @@ argv_buffer:
 envp_buffer:
     .space 256
 
+.globl command_buffer
 command_buffer:
     .space COMMAND_MAX
 
