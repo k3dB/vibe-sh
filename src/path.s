@@ -10,7 +10,9 @@
 // Resolve command path using PATH environment variable
 // x0 = command name
 // x1 = PATH string pointer
+// x2 = current position pointer (NULL on first call)
 // returns x0 = resolved path pointer (in command_buffer), or NULL if not found
+// returns x1 = updated position for next call
 resolve_command_path:
     stp     x29, x30, [sp, #-16]! // Prologue: save FP and LR
     stp     x19, x20, [sp, #-16]! // Save callee-saved registers
@@ -18,6 +20,7 @@ resolve_command_path:
 
     mov     x19, x0               // Save command name
     mov     x20, x1               // Save PATH pointer
+    mov     x21, x2               // Save current position
 
     // Check if command name contains '/' (already a path)
     // x0 already has string pointer (command name)
@@ -32,10 +35,6 @@ resolve_command_path:
     ldrb    w2, [x20]
     cbz     w2, resolve_path_not_found
 
-    // Initialize position pointer to NULL for first call
-    mov     x21, #0
-
-resolve_path_loop:
     // Get next PATH component
     mov     x0, x20               // PATH pointer
     mov     x1, x21               // Current position
@@ -72,9 +71,10 @@ next_command_byte:
 
     strb    wzr, [x0]             // Null-terminate the string
 
-    // Return the constructed path
+    // Return the constructed path and updated position
     adrp    x0, command_buffer@PAGE
     add     x0, x0, command_buffer@PAGEOFF
+    mov     x1, x21               // Return updated position
     b       resolve_path_done
 
 resolve_path_as_is:
@@ -92,13 +92,15 @@ next_command_as_is_byte:
 
     strb    wzr, [x0]             // Null-terminate the string
 
-    // Return the command_buffer
+    // Return the command_buffer and position set to NULL (no more paths to try)
     adrp    x0, command_buffer@PAGE
     add     x0, x0, command_buffer@PAGEOFF
+    mov     x1, #0                // Set position to NULL (command is absolute path)
     b       resolve_path_done
 
 resolve_path_not_found:
     mov     x0, #0                // Return NULL
+    mov     x1, #0                // Set position to NULL
 
 resolve_path_done:
     ldp     x21, x22, [sp], #16   // Restore callee-saved registers

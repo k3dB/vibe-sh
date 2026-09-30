@@ -39,6 +39,7 @@ execute_external:
     mov     x29, sp
     stp     x19, x20, [sp, #-16]! // Save callee-saved registers
     stp     x21, x22, [sp, #-16]!
+    stp     x23, x24, [sp, #-16]!
 
     mov     x19, x0               // tokens
     mov     x20, x1               // token count
@@ -57,7 +58,8 @@ failure:
 success:
     mov     x0, #0                // success
 execute_external_end:
-    ldp     x21, x22, [sp], #16   // Restore callee-saved registers
+    ldp     x23, x24, [sp], #16   // Restore callee-saved registers
+    ldp     x21, x22, [sp], #16
     ldp     x19, x20, [sp], #16
     ldp     x29, x30, [sp], #16   // Restore FP and LR
     ret
@@ -92,49 +94,60 @@ exec_child:
     ldr     x0, [x19]             // executable path
     mov     x22, x0               // Save command name for later use
 
-    // Resolve command path using PATH
-    mov     x1, x21               // PATH pointer
-    bl      resolve_command_path
+    // Initialize position pointer to NULL for first call
+    mov     x23, #0               // Current position in PATH
 
-    cbnz    x0, setup_argv
-
-    // Path resolution failed - use original command name
-    mov     x0, x22               // original command name
-
-setup_argv:
-    adrp    x1, argv_buffer@PAGE
-    add     x1, x1, argv_buffer@PAGEOFF
+    // Set up argv and envp before the retry loop (they don't change)
+    adrp    x10, argv_buffer@PAGE
+    add     x10, x10, argv_buffer@PAGEOFF
 
     // Copy token pointers to argv_buffer
-    mov     x10, x1               // dst
     mov     x11, x19              // src
     mov     x12, x20              // count
 
-next_token:
-    cbz     x12, token_copy_done
+setup_argv_loop:
+    cbz     x12, argv_copy_done
 
     ldr     x13, [x11], #8
     str     x13, [x10], #8
 
     subs    x12, x12, #1
-    bne     next_token
+    bne     setup_argv_loop
 
-token_copy_done:
+argv_copy_done:
     str     xzr, [x10]
 
     // Set up empty envp (array with single NULL pointer)
-    adrp    x2, envp_buffer@PAGE
-    add     x2, x2, envp_buffer@PAGEOFF
-    str     xzr, [x2]             // envp[0] = NULL
+    adrp    x24, envp_buffer@PAGE
+    add     x24, x24, envp_buffer@PAGEOFF
+    str     xzr, [x24]            // envp[0] = NULL
+
+path_retry_loop:
+    // Call resolve_command_path to get next path candidate
+    mov     x0, x22               // command name
+    mov     x1, x21               // PATH pointer
+    mov     x2, x23               // current position
+    bl      resolve_command_path
+
+    // x0 = resolved path pointer (or NULL), x1 = updated position
+    cbz     x0, all_paths_failed  // No more paths to try
+
+    // Save updated position for next iteration
+    mov     x23, x1
 
     // execve(path, argv, environ)
+    adrp    x1, argv_buffer@PAGE
+    add     x1, x1, argv_buffer@PAGEOFF
+    mov     x2, x24               // envp
     mov     x16, #59              // execve syscall
     svc     #0x80
 
-    // execve failed - terminate child process with returned status
+    // If we get here, execve failed - try next PATH component
+    b       path_retry_loop
 
-    // x0 already contains error code from execve
-    mov     x1, x22               // resolved path for error message
+all_paths_failed:
+    // All PATH components failed - fall through to error handling
+    mov     x0, x22               // original command name for error message
     bl      handle_exec_error     // Returns exit status code in x0
 
     mov     x16, #1               // exit syscall
