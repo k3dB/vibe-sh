@@ -38,10 +38,16 @@ resolve_command_path:
     // Get next PATH component
     cmp     x21, #0
     csel    x0, x21, x20, ne
-    bl      get_next_path_component
 
-    // More path components?
-    cbz     x0, resolve_path_not_found
+    // Check if current position points to null terminator (end of PATH)
+    ldrb    w2, [x0]
+    cbz     w2, resolve_path_not_found
+
+    cmp     w2, #':'              // If in between components,
+    cinc    x0, x0, eq            // move to first byte of next component
+
+    // Check for more components in case PATH ends with a colon
+    cbz     w2, resolve_path_not_found
 
     mov     x21, x0               // Path component pointer
 
@@ -106,23 +112,4 @@ resolve_path_done:
     ldp     x21, x22, [sp], #16   // Restore callee-saved registers
     ldp     x19, x20, [sp], #16
     ldp     x29, x30, [sp], #16   // Restore FP and LR
-    ret
-
-// Get next PATH component
-// x0 = current position pointer
-// returns x0 = pointer to next component (NULL if no more)
-get_next_path_component:
-    // Check if current position points to null terminator (end of PATH)
-    ldrb    w2, [x0]
-    cbz     w2, no_more_components
-
-    cmp     w2, #':'              // If in between components,
-    cinc    x0, x0, eq            // move to first byte of next component
-
-    // Check for more components in case PATH ends with a colon
-    cbz     x0, no_more_components
-    ret
-
-no_more_components:
-    mov     x0, #0                // Return NULL
     ret
