@@ -136,6 +136,7 @@ path_retry_loop:
     mov     x23, x1
 
     // execve(path, argv, environ)
+    mov     x0, x0                // resolved path
     adrp    x1, argv_buffer@PAGE
     add     x1, x1, argv_buffer@PAGEOFF
     mov     x2, x24               // envp

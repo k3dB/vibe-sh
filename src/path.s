@@ -36,28 +36,28 @@ resolve_command_path:
     cbz     w2, resolve_path_not_found
 
     // Get next PATH component
-    mov     x0, x20               // PATH pointer
-    mov     x1, x21               // Current position
+    cmp     x21, #0
+    csel    x0, x21, x20, ne
     bl      get_next_path_component
 
-    // x0 = component pointer, x1 = updated position
+    // More path components?
     cbz     x0, resolve_path_not_found
 
-    // Save component pointer and updated position
-    mov     x22, x0               // Component pointer
-    mov     x21, x1               // Updated position for next iteration
+    mov     x21, x0               // Path component pointer
 
     // Construct full path in command_buffer: dir + '/' + command
     adrp    x0, command_buffer@PAGE
     add     x0, x0, command_buffer@PAGEOFF
 
     // Copy directory component to command_buffer
-    mov     x1, x22               // Source: directory component
 next_component_byte:
-    ldrb    w2, [x1], #1
+    ldrb    w2, [x21], #1
+    cmp     w2, #':'
+    beq     .append_slash
     strb    w2, [x0], #1
-    cbnz    w2, next_component_byte
+    b       next_component_byte
 
+.append_slash:
     mov     w2, #'/'              // Append '/' to the path
     strb    w2, [x0], #1
 
@@ -69,7 +69,7 @@ next_command_byte:
     strb    w2, [x0], #1
     cbnz    w2, next_command_byte
 
-    strb    wzr, [x0]             // Null-terminate the string
+    strb    wzr, [x0]             // Null-terminate the command buffer
 
     // Return the constructed path and updated position
     adrp    x0, command_buffer@PAGE
@@ -109,62 +109,20 @@ resolve_path_done:
     ret
 
 // Get next PATH component
-// x0 = PATH string pointer
-// x1 = current position pointer (NULL on first call)
+// x0 = current position pointer
 // returns x0 = pointer to next component (NULL if no more)
-// returns x1 = updated position for next call
 get_next_path_component:
-    stp     x29, x30, [sp, #-16]! // Prologue: save FP and LR
-
-    // If current position is NULL, start from beginning of PATH
-    cbz     x1, get_next_path_start
-
     // Check if current position points to null terminator (end of PATH)
-    ldrb    w2, [x1]
+    ldrb    w2, [x0]
     cbz     w2, no_more_components
 
-    // Current position is valid, continue from there
-    b       get_next_path_find_colon
+    cmp     w2, #':'              // If in between components,
+    cinc    x0, x0, eq            // move to first byte of next component
 
-get_next_path_start:
-    // Start from beginning of PATH
-    mov     x1, x0
-
-    // Check if PATH is empty
-    ldrb    w2, [x1]
-    cbz     w2, no_more_components
-
-get_next_path_find_colon:
-    // Use strchr to find next colon from current position
-    mov     x0, x1                // String to search
-    mov     w1, #':'              // Character to find
-    bl      strchr
-
-    // x0 now contains pointer to colon, or NULL if not found
-    cbz     x0, get_next_path_last_component
-
-    // Colon found: return current position as component start
-    // and update position to after the colon
-    mov     x2, x1                // Save current position (component start)
-    add     x1, x0, #1            // Update position to after colon
-    mov     x0, x2                // Return component start in x0
-
-    ldp     x29, x30, [sp], #16   // Restore FP and LR
-    ret
-
-get_next_path_last_component:
-    // No colon found: this is the last component
-    // Return current position as component start
-    // and set position to NULL (no more components)
-    mov     x0, x1                // Return component start in x0
-    mov     x1, #0                // Set position to NULL
-
-    ldp     x29, x30, [sp], #16   // Restore FP and LR
+    // Check for more components in case PATH ends with a colon
+    cbz     x0, no_more_components
     ret
 
 no_more_components:
     mov     x0, #0                // Return NULL
-    mov     x1, #0                // Set position to NULL
-
-    ldp     x29, x30, [sp], #16   // Restore FP and LR
     ret
