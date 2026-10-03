@@ -35,9 +35,9 @@ command_buffer:
 // x2 = path value pointer
 
 execute_external:
-    stp     x29, x30, [sp, #-16]! // Prologue: save FP and LR
+    stp     x29, x30, [sp, #-16]! // prologue
     mov     x29, sp
-    stp     x19, x20, [sp, #-16]! // Save callee-saved registers
+    stp     x19, x20, [sp, #-16]!
     stp     x21, x22, [sp, #-16]!
     stp     x23, x24, [sp, #-16]!
 
@@ -58,10 +58,10 @@ failure:
 success:
     mov     x0, #0                // success
 execute_external_end:
-    ldp     x23, x24, [sp], #16   // Restore callee-saved registers
+    ldp     x23, x24, [sp], #16   // epiplogue
     ldp     x21, x22, [sp], #16
     ldp     x19, x20, [sp], #16
-    ldp     x29, x30, [sp], #16   // Restore FP and LR
+    ldp     x29, x30, [sp], #16
     ret
 
 wait_for_child:
@@ -75,15 +75,15 @@ wait_for_child:
     cmp     x0, #0                // check if wait4 failed
     blt     failure
 
-    adrp    x1, wait_status@PAGE  // Load and check wait status
+    adrp    x1, wait_status@PAGE  // load and check wait status
     add     x1, x1, wait_status@PAGEOFF
     ldr     w1, [x1]
 
-    and     w2, w1, #0x7f         // Check if terminated by signal
+    and     w2, w1, #0x7f         // check if terminated by signal
     cbnz    w2, failure
 
-    lsr     w2, w1, #8            // Extract exit status
-    and     w2, w2, #0xff         // Mask to 8 bits
+    lsr     w2, w1, #8            // extract exit status
+    and     w2, w2, #0xff         // mask to 8 bits
     cbnz    w2, failure
 
     b       success
@@ -92,10 +92,10 @@ wait_for_child:
 exec_child:
     // Get executable path
     ldr     x0, [x19]             // executable path
-    mov     x22, x0               // Save command name for later use
+    mov     x22, x0               // save command name for later use
 
     // Initialize position pointer to NULL for first call
-    mov     x23, #0               // Current position in PATH
+    mov     x23, #0               // current position in PATH
 
     // Set up argv and envp before the retry loop (they don't change)
     adrp    x10, argv_buffer@PAGE
@@ -123,11 +123,10 @@ argv_copy_done:
     str     xzr, [x24]            // envp[0] = NULL
 
 path_retry_loop:
-    // Call resolve_command_path to get next path candidate
     mov     x0, x22               // command name
     mov     x1, x21               // PATH pointer
     mov     x2, x23               // current position
-    bl      resolve_command_path
+    bl      resolve_command_path  // get next path candidate
 
     // x0 = resolved path pointer (or NULL), x1 = updated position
     cbz     x0, all_paths_failed  // No more paths to try
@@ -149,7 +148,7 @@ path_retry_loop:
 all_paths_failed:
     // All PATH components failed - fall through to error handling
     mov     x0, x22               // original command name for error message
-    bl      handle_exec_error     // Returns exit status code in x0
+    bl      handle_exec_error     // returns exit status code in x0
 
     mov     x16, #1               // exit syscall
     svc     #0x80

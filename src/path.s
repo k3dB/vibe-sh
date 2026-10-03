@@ -14,18 +14,18 @@
 // returns x0 = resolved path pointer (in command_buffer), or NULL if not found
 // returns x1 = updated position for next call
 resolve_command_path:
-    stp     x29, x30, [sp, #-16]! // Prologue: save FP and LR
-    stp     x19, x20, [sp, #-16]! // Save callee-saved registers
+    stp     x29, x30, [sp, #-16]! // prologue
+    stp     x19, x20, [sp, #-16]!
     stp     x21, x22, [sp, #-16]!
 
-    mov     x19, x0               // Save command name
-    mov     x20, x1               // Save PATH pointer
-    mov     x21, x2               // Save current position
+    mov     x19, x0               // save command name
+    mov     x20, x1               // save PATH pointer
+    mov     x21, x2               // save current position
 
     // Check if command name contains '/' (already a path)
     // x0 already has string pointer (command name)
     mov     w1, #'/'              // x1 = character to find ('/')
-    bl      strchr                // Call strchr to find '/' in string
+    bl      strchr                // call strchr to find '/' in string
 
     // strchr returns pointer to '/' if found, or NULL (0) if not found
     cbnz    x0, resolve_path_as_is
@@ -43,13 +43,13 @@ resolve_command_path:
     ldrb    w2, [x0]
     cbz     w2, resolve_path_not_found
 
-    cmp     w2, #':'              // If in between components,
+    cmp     w2, #':'              // if in between components,
     cinc    x0, x0, eq            // move to first byte of next component
 
     // Check for more components in case PATH ends with a colon
     cbz     w2, resolve_path_not_found
 
-    mov     x21, x0               // Path component pointer
+    mov     x21, x0               // path component pointer
 
     // Construct full path in command_buffer: dir + '/' + command
     adrp    x0, command_buffer@PAGE
@@ -64,23 +64,23 @@ next_component_byte:
     b       next_component_byte
 
 .append_slash:
-    mov     w2, #'/'              // Append '/' to the path
+    mov     w2, #'/'              // append '/' to the path
     strb    w2, [x0], #1
 
     // Append command name to the path
-    mov     x1, x19               // Source: command name
+    mov     x1, x19               // source: command name
 
 next_command_byte:
     ldrb    w2, [x1], #1
     strb    w2, [x0], #1
     cbnz    w2, next_command_byte
 
-    strb    wzr, [x0]             // Null-terminate the command buffer
+    strb    wzr, [x0]             // NUL-terminate the command buffer
 
     // Return the constructed path and updated position
     adrp    x0, command_buffer@PAGE
     add     x0, x0, command_buffer@PAGEOFF
-    mov     x1, x21               // Return updated position
+    mov     x1, x21               // return updated PATH position
     b       resolve_path_done
 
 resolve_path_as_is:
@@ -89,27 +89,27 @@ resolve_path_as_is:
     adrp    x0, command_buffer@PAGE
     add     x0, x0, command_buffer@PAGEOFF
 
-    mov     x1, x19               // Source: command name
+    mov     x1, x19               // source: command name
 
 next_command_as_is_byte:
     ldrb    w2, [x1], #1
     strb    w2, [x0], #1
     cbnz    w2, next_command_as_is_byte
 
-    strb    wzr, [x0]             // Null-terminate the string
+    strb    wzr, [x0]             // NUL-terminate the string
 
     // Return the command_buffer and position set to NULL (no more paths to try)
     adrp    x0, command_buffer@PAGE
     add     x0, x0, command_buffer@PAGEOFF
-    mov     x1, #0                // Set position to NULL (command is absolute path)
-    b       resolve_path_done
+    mov     x1, #0                // set PATH position to NULL
+    b       resolve_path_done     // command is absolute path
 
 resolve_path_not_found:
-    mov     x0, #0                // Return NULL
-    mov     x1, #0                // Set position to NULL
+    mov     x0, #0                // return NULL
+    mov     x1, #0                // set PATH position to NULL
 
 resolve_path_done:
-    ldp     x21, x22, [sp], #16   // Restore callee-saved registers
+    ldp     x21, x22, [sp], #16   // epilogue
     ldp     x19, x20, [sp], #16
-    ldp     x29, x30, [sp], #16   // Restore FP and LR
+    ldp     x29, x30, [sp], #16
     ret
