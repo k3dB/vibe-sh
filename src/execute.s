@@ -12,43 +12,47 @@
 // x0 = token array
 // x1 = token count
 // x2 = path value pointer
+// x3 = home value pointer
 execute_command:
     // x19 = token array
     // x20 = token count
     // x21 = path value pointer
-    // x22 = command name
+    // x22 = home value pointer
+    // x23 = command name
 
     // Prologue
-    stp     x29, x30, [sp, #-16]! // Preserve FP and LR
-    stp     x19, x20, [sp, #-16]! // Preserve callee-saved registers
+    stp     x29, x30, [sp, #-16]! // preserve FP and LR
+    stp     x19, x20, [sp, #-16]! // preserve callee-saved registers
     stp     x21, x22, [sp, #-16]!
+    stp     x23, x24, [sp, #-16]!
 
     mov     x19, x0               // token array
     mov     x20, x1               // token count
     mov     x21, x2               // path value pointer
+    mov     x22, x3               // home value pointer
 
-    cmp     x20, #0               // Check if token count is 0 (empty line)
+    cmp     x20, #0               // check if token count is 0 (empty line)
     beq     execute_success
 
-    ldr     x22, [x19]            // Get first token (command name)
+    ldr     x23, [x19]            // get first token (command name)
 
     // Check for exit built-in
-    mov     x0, x22
+    mov     x0, x23
     bl      strcmp_exit
     cbz     x0, exit
 
     // Check for echo built-in
-    mov     x0, x22
+    mov     x0, x23
     bl      strcmp_echo
     cbz     x0, echo
 
     // Check for pwd built-in
-    mov     x0, x22
+    mov     x0, x23
     bl      strcmp_pwd
     cbz     x0, pwd
 
     // Check for cd built-in
-    mov     x0, x22
+    mov     x0, x23
     bl      strcmp_cd
     cbz     x0, cd
 
@@ -57,22 +61,23 @@ execute_command:
     mov     x1, x20
     mov     x2, x21
     bl      execute_external
-    b       execute_end           // Return external command result
+    b       execute_end           // return external command result
 
 execute_success:
-    mov     x0, #0                // Return success
+    mov     x0, #0                // return success
 execute_end:
-    mov     x1, #0                // Clear exit flag
+    mov     x1, #0                // clear exit flag
 
 execute.epilogue:
-    ldp     x21, x22, [sp], #16   // Restore callee-saved registers
+    ldp     x23, x24, [sp], #16   // restore callee-saved registers
+    ldp     x21, x22, [sp], #16
     ldp     x19, x20, [sp], #16
-    ldp     x29, x30, [sp], #16   // Restore FP and LR
+    ldp     x29, x30, [sp], #16   // restore FP and LR
     ret
 
 exit:
-    mov     x0, #0                // Return success
-    mov     x1, #1                // Set exit flag
+    mov     x0, #0                // return success
+    mov     x1, #1                // set exit flag
     b       execute.epilogue
 
 echo:
@@ -88,5 +93,6 @@ pwd:
 cd:
     mov     x0, x19
     mov     x1, x20
+    mov     x2, x22
     bl      builtin_cd
     b       execute_success
