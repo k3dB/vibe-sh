@@ -12,18 +12,18 @@
 .globl _main
 
 _main:
-    stp     x29, x30, [sp, #-16]! // Preserve FP and LR
+    stp     x29, x30, [sp, #-16]! // preserve FP and LR
     stp     x19, x20, [sp, #-16]! // x19 = return code, x20 = path value pointer
     stp     x21, x22, [sp, #-16]! // x21 = home value pointer, x22 = *envp
 
     mov     x22, x2               // preserve envp pointer
     mov     x0, x22               // pass *envp to find_path
     bl      find_path
-    mov     x20, x0               // Store PATH value pointer
+    mov     x20, x0               // store PATH value pointer
 
     mov     x0, x22               // pass *envp to find_home
     bl      find_home
-    mov     x21, x0               // Store HOME value pointer
+    mov     x21, x0               // store HOME value pointer
 
 display_prompt:
     mov     x0, #1                // stdout
@@ -41,17 +41,17 @@ display_prompt:
     mov     x16, #3               // read syscall
     svc     #0x80
 
-    mov     x3, x0                // Save the read length
-    cbz     x3, exit_shell        // Check for EOF (read returns 0)
+    mov     x3, x0                // save the read length
+    cbz     x3, exit_shell        // check for EOF (read returns 0)
 
-    cmp     x3, #-1               // Check for error (read returns -1)
+    cmp     x3, #-1               // check for error (read returns -1)
     beq     exit_shell
 
     // Parse the command
     // x0 = input buffer, x1 = token array, returns x0 = token count
     adrp    x0, input_buffer@PAGE
     add     x0, x0, input_buffer@PAGEOFF
-    strb    wzr, [x0, x3]         // Null-terminate the input
+    strb    wzr, [x0, x3]         // null-terminate the input
     adrp    x1, token_array@PAGE
     add     x1, x1, token_array@PAGEOFF
     bl      parse_command
@@ -66,8 +66,8 @@ display_prompt:
     mov     x3, x21               // HOME value pointer
     bl      execute_command
 
-    mov     x19, x0               // Copy return code for potential exit
-    cbnz    x1, exit_shell        // Exit if exit flag is set
+    mov     x19, x0               // copy return code for potential exit
+    cbnz    x1, exit_shell        // exit if exit flag is set
 
     b       display_prompt
 
@@ -82,12 +82,12 @@ exit_shell:
 
     // Exit
     mov     x0, x19               // exit status
-    ldp     x21, x22, [sp], #16   // Restore callee-saved registers
-    ldp     x19, x20, [sp], #16   // Restore callee-saved registers
-    ldp     x29, x30, [sp], #16   // Restore FP and LR
+    ldp     x21, x22, [sp], #16   // restore callee-saved registers
+    ldp     x19, x20, [sp], #16
+    ldp     x29, x30, [sp], #16   // restore FP and LR
 
     mov     x16, #1               // exit syscall
-    svc     #0x80                 // Exits the process, no code runs after this
+    svc     #0x80                 // exits the process, no code runs after this
 
 .section __TEXT, __cstring
 
