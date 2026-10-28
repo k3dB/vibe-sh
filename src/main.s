@@ -14,10 +14,16 @@
 _main:
     stp     x29, x30, [sp, #-16]! // Preserve FP and LR
     stp     x19, x20, [sp, #-16]! // x19 = return code, x20 = path value pointer
+    stp     x21, x22, [sp, #-16]! // x21 = home value pointer, x22 = *envp
 
-    mov     x0, x2                // envp
+    mov     x22, x2               // preserve envp pointer
+    mov     x0, x22               // pass *envp to find_path
     bl      find_path
     mov     x20, x0               // Store PATH value pointer
+
+    mov     x0, x22               // pass *envp to find_home
+    bl      find_home
+    mov     x21, x0               // Store HOME value pointer
 
 display_prompt:
     mov     x0, #1                // stdout
@@ -52,11 +58,12 @@ display_prompt:
     mov     x3, x0                // token count
 
     // Execute the command
-    // x0 = token array, x1 = token count, x2 = path buffer
+    // x0 = token array, x1 = token count, x2 = path buffer, x3 = home buffer
     adrp    x0, token_array@PAGE
     add     x0, x0, token_array@PAGEOFF
     mov     x1, x3
     mov     x2, x20               // PATH value pointer
+    mov     x3, x21               // HOME value pointer
     bl      execute_command
 
     mov     x19, x0               // Copy return code for potential exit
@@ -75,6 +82,7 @@ exit_shell:
 
     // Exit
     mov     x0, x19               // exit status
+    ldp     x21, x22, [sp], #16   // Restore callee-saved registers
     ldp     x19, x20, [sp], #16   // Restore callee-saved registers
     ldp     x29, x30, [sp], #16   // Restore FP and LR
 
