@@ -44,3 +44,45 @@ not_found:
 
 find_path_done:
     ret
+
+.globl find_home
+
+// Get parent process environment and extract HOME
+// Returns pointer to HOME string in x0, or NULL if not found
+find_home:
+    mov     x2, #0                // envp index
+
+next_env_home:
+    ldr     x1, [x0, x2]          // load envp[i]
+    cbz     x1, home_not_found    // if NULL, HOME not found
+    add     x2, x2, #8            // next envp index
+
+    ldrb    w3, [x1]              // load first byte of envp[i]
+    cmp     w3, #'H'              // check if first byte is 'H'
+    bne     next_env_home         // if not, continue to next envp
+
+    ldrb    w3, [x1, #1]          // load second byte of envp[i]
+    cmp     w3, #'O'              // check if second byte is 'O'
+    bne     next_env_home         // if not, continue to next envp
+
+    ldrb    w3, [x1, #2]          // load third byte of envp[i]
+    cmp     w3, #'M'              // check if third byte is 'M'
+    bne     next_env_home         // if not, continue to next envp
+
+    ldrb    w3, [x1, #3]          // load fourth byte of envp[i]
+    cmp     w3, #'E'              // check if fourth byte is 'E'
+    bne     next_env_home         // if not, continue to next envp
+
+    ldrb    w3, [x1, #4]          // load fifth byte of envp[i]
+    cmp     w3, #'='              // check if fifth byte is '='
+    bne     next_env_home         // if not, continue to next envp
+
+    // HOME found, return pointer to HOME value (after '=')
+    add     x0, x1, #5            // skip "HOME=" prefix
+    b       find_home_done
+
+home_not_found:
+    mov     x0, #0                // return NULL
+
+find_home_done:
+    ret
