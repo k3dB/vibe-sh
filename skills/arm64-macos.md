@@ -20,6 +20,11 @@ x30 (LR)
 
 Treat these as temporary across BL/BLR and system calls.
 
+**CRITICAL**: Both function calls (BL/BLR) and system calls (svc #0x80) can clobber
+any of these registers. If you need a value from a caller-saved register after a
+call or syscall, you MUST preserve it in a callee-saved register (x19-x28) or
+on the stack BEFORE the call.
+
 ### Callee-saved / non-volatile
 
 A function that modifies these registers must restore them before returning:
