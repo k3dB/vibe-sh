@@ -66,7 +66,7 @@ $$ exit
 ## Roadmap
 
 - [x] Implement PATH lookup for external commands
-- [ ] Handle `cd` (without arguments) to navigate to `~`
+- [x] Handle `cd` (without arguments) to navigate to `~`
 - [ ] Handle `cd -` for switching to previous directory
 - [ ] Handle `.` and `..` in paths
 - [ ] Handle `~` in paths

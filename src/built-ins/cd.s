@@ -8,48 +8,64 @@
 // Built-in: cd
 // x0 = token array
 // x1 = token count
+// x2 = home value pointer
 builtin_cd:
-    // Check if argument provided
-    cmp     x1, #1
-    bgt     cd_has_arg
+    cmp     x1, #1                // check if argument provided
+    bgt     cd_path
 
-    // No argument, go to HOME directory
-    // TODO: Implement HOME directory logic
-    // For now, just print error
-    mov     x0, #1          // stdout
-    adrp    x1, cd_error@PAGE
-    add     x1, x1, cd_error@PAGEOFF
-    mov     x2, #26         // Error message length
-    mov     x16, #4         // write syscall
+    // No argument: go to HOME directory
+    cbnz    x2, .cd_home          // check if HOME is not null
+
+    // HOME not set: print error
+    mov     x0, #1                // stdout
+    adrp    x1, cd_home_error@PAGE
+    add     x1, x1, cd_home_error@PAGEOFF
+    mov     x2, #19               // error message length
+    mov     x16, #4               // write syscall
     svc     #0x80
-    mov     x0, xzr         // Return success
-    ret
+    b       cd_done
 
-cd_has_arg:
-    // Get the path argument
-    ldr     x0, [x0, #8]
-
-    // chdir syscall
-    mov     x16, #12        // chdir syscall
+.cd_home:
+    mov     x0, x2                // HOME pointer
+    mov     x16, #12              // chdir syscall
     svc     #0x80
 
-    // Check for error
-    cmp     x0, #0
-    beq     cd_done
+    cmp     x0, #0                // check for error
+    beq     cd_success
+    b       display_cd_error
 
+cd_path:
+    // TODO: Handle tilde expansion (~)
+    ldr     x0, [x0, #8]          // get the path argument
+
+    mov     x16, #12              // chdir syscall
+    svc     #0x80
+
+    cmp     x0, #0                // check for error
+    beq     cd_success
+
+display_cd_error:
     // Print error message
-    mov     x0, #1          // stdout
+    mov     x0, #1                // stdout
     adrp    x1, cd_error@PAGE
     add     x1, x1, cd_error@PAGEOFF
-    mov     x2, #29         // Error message length
-    mov     x16, #4         // write syscall
+    mov     x2, #29               // error message length
+    mov     x16, #4               // write syscall
     svc     #0x80
+
+    mov     x0, #1                // error
+    b       cd_done
+
+cd_success:
+    mov     x0, #0                // success
 
 cd_done:
-    mov     x0, xzr         // Return success
     ret
 
 .section __TEXT, __cstring
 
 cd_error:
     .asciz "cd: error changing directory\n"
+
+cd_home_error:
+    .asciz "cd: HOME not set\n"
