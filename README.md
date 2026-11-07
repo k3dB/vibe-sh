@@ -49,16 +49,15 @@ $$ exit
 - Basic command parsing
 - Basic built-in `echo` command functionality
 - Built-in `exit` command
+- External command execution
 
 **Partially Implemented:**
-- External command execution (PATH lookup in progress)
 - Built-in `cd` command (see roadmap for missing functionality)
 
 **Placeholder Implementation:**
 - Built-in `pwd` command currently returns a hard-coded value
 
 **Known Limitations:**
-- PATH lookup for external commands is in progress
 - Quoted strings not yet supported
 - Variable expansion not yet supported
 - `cd` does not yet support all expected shell behavior
