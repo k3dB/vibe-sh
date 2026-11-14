@@ -11,26 +11,25 @@ error_buffer:
 .p2align 2
 .globl handle_exec_error
 
-// Handle execution errors - display appropriate error message to stdout
+// Handle execution errors - display appropriate error message to stderr
 // x0 = error code (Darwin errno)
 // x1 = command name (argv[0])
 // returns x0 = exit status code
 handle_exec_error:
-    // Prologue
-    stp     x29, x30, [sp, #-16]!
+    stp     x29, x30, [sp, #-16]! // prologue
     mov     x29, sp
     stp     x19, x20, [sp, #-16]!
 
-    mov     x19, x0                // Save error code
-    mov     x20, x1                // Save command name
+    mov     x19, x0               // save error code
+    mov     x20, x1               // save command name
 
     // Build error message in buffer: "<command>: <error message>\n"
-    adrp    x8, error_buffer@PAGE  // Use volatile register for buffer pointer
+    adrp    x8, error_buffer@PAGE // Use volatile register for buffer pointer
     add     x8, x8, error_buffer@PAGEOFF
 
     // Copy command name to buffer
-    mov     x9, x20                // src (command name)
-    mov     x10, x8                // dst (buffer)
+    mov     x9, x20               // src (command name)
+    mov     x10, x8               // dst (buffer)
 
 copy_command_loop:
     ldrb    w11, [x9], #1
@@ -39,8 +38,7 @@ copy_command_loop:
     b       copy_command_loop
 
 copy_command_done:
-    // Calculate command name length: (x10 - x8)
-    sub     x11, x10, x8
+    sub     x11, x10, x8          // calculate command name length
 
     // Append ": "
     mov     w12, #':'
@@ -105,8 +103,7 @@ copy_msg_loop:
 
 copy_msg_done:
 write_error:
-    // Write the error message to stdout
-    mov     x0, #1                // stdout
+    mov     x0, #2                // stderr
     mov     x1, x8                // buffer pointer
     mov     x16, #4               // write syscall
     svc     #0x80
@@ -131,8 +128,7 @@ exit_eacces:
     mov     x0, #126
 
 handle_exec_error_end:
-    // Epilogue
-    ldp     x19, x20, [sp], #16
+    ldp     x19, x20, [sp], #16   // epilogue
     ldp     x29, x30, [sp], #16
     ret
 

@@ -17,7 +17,7 @@ builtin_cd:
     cbnz    x2, .cd_home           // check if HOME is not null
 
     // HOME not set: print error
-    mov     x0, #1                 // stdout
+    mov     x0, #2                 // stderr
     adrp    x1, cd_home_error@PAGE
     add     x1, x1, cd_home_error@PAGEOFF
     mov     x2, #cd_home_error_len // error message length
@@ -46,7 +46,7 @@ cd_path:
 
 display_cd_error:
     // Print error message
-    mov     x0, #1                 // stdout
+    mov     x0, #2                 // stderr
     adrp    x1, cd_error@PAGE
     add     x1, x1, cd_error@PAGEOFF
     mov     x2, #cd_error_len      // error message length

@@ -80,7 +80,7 @@ pwd_strlen_loop:
 
 pwd_open_error:
     // Print error message
-    mov     x0, #1                // stdout
+    mov     x0, #2                // stderr
     adrp    x1, pwd_error@PAGE
     add     x1, x1, pwd_error@PAGEOFF
     mov     x2, #pwd_error_len    // error message length
@@ -97,7 +97,7 @@ pwd_fcntl_error:
     svc     #0x80
 
     // Print error message
-    mov     x0, #1                // stdout
+    mov     x0, #2                // stderr
     adrp    x1, pwd_error@PAGE
     add     x1, x1, pwd_error@PAGEOFF
     mov     x2, #pwd_error_len    // error message length
