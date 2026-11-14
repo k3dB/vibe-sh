@@ -122,7 +122,31 @@ Make functions global only when necessary:
 Think of the `.globl` directive as exporting a function in JavaScript. You are
 saying this function is called from function in another file.
 
-## 7. Mandatory review before declaring completion
+## 7. Lessons learned
+
+### Register clobbering across function calls
+
+**Bug**: When implementing `cd -`, the HOME pointer passed in x2 was not preserved before calling `get_current_path`. The function's return value in x0 overwrote x2, causing chdir to use garbage data.
+
+**Rule**: Data that needs to outlive a function call or system call MUST be preserved either in a non-volatile register (x19-x28) or on the stack. Caller-saved registers (x0-x17) are volatile and will be clobbered by both BL/BLR and system calls (svc #0x80).
+
+**Example**:
+```asm
+// WRONG: x2 will be clobbered by get_current_path return value
+mov     x0, buffer
+bl      get_current_path
+mov     x0, x2              // x2 is now garbage
+svc     #0x80
+
+// CORRECT: preserve in callee-saved register
+mov     x19, x2             // save in x19 before call
+mov     x0, buffer
+bl      get_current_path
+mov     x0, x19             // restore from x19
+svc     #0x80
+```
+
+## 8. Mandatory review before declaring completion
 
 For every assembly function, verify:
 
