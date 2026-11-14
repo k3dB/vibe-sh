@@ -50,7 +50,7 @@ builtin_echo_loop:
     mov     x0, #1                // stdout
     adrp    x1, separator@PAGE
     add     x1, x1, separator@PAGEOFF
-    mov     x2, #1                // Separator length
+    mov     x2, #separator_len    // Separator length
     mov     x16, #4               // write syscall
     svc     #0x80
 
@@ -63,7 +63,7 @@ builtin_echo_done:
     mov     x0, #1                // stdout
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
-    mov     x2, #1                // Newline length
+    mov     x2, #newline_len      // Newline length
     mov     x16, #4               // write syscall
     svc     #0x80
 
@@ -80,5 +80,8 @@ builtin_echo_done:
 
 newline:
     .asciz "\n"
+    .set newline_len, . - newline
+
 separator:
     .asciz " "
+    .set separator_len, . - separator

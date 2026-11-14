@@ -29,7 +29,7 @@ display_prompt:
     mov     x0, #1                // stdout
     adrp    x1, prompt@PAGE
     add     x1, x1, prompt@PAGEOFF
-    mov     x2, #3                // length of "$$ "
+    mov     x2, #prompt_len       // length of "$$ "
     mov     x16, #4               // write syscall
     svc     #0x80
 
@@ -76,7 +76,7 @@ exit_shell:
     mov     x0, #1                // stdout
     adrp    x1, newline@PAGE
     add     x1, x1, newline@PAGEOFF
-    mov     x2, #1                // length of newline
+    mov     x2, #newline_len      // length of newline
     mov     x16, #4               // write syscall
     svc     #0x80
 
@@ -93,8 +93,12 @@ exit_shell:
 
 prompt:
     .asciz "$$ "
+    .set prompt_len, . - prompt
+
 newline:
     .asciz "\n"
+    .set newline_len, . - newline
+
 space:
     .asciz " "
 
