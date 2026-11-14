@@ -13,9 +13,9 @@
 // x2 = home value pointer
 builtin_cd:
     // Establish frame and save callee-saved registers
-    stp     x29, x30, [sp, #-32]!
+    stp     x29, x30, [sp, #-16]!
     mov     x29, sp
-    stp     x19, x20, [sp, #16]
+    stp     x19, x20, [sp, #-16]!
 
     cmp     x1, #1                // check if argument provided
     bgt     cd_path
@@ -194,8 +194,8 @@ cd_success:
 
 cd_done:
     // Restore registers and return
-    ldp     x19, x20, [sp, #16]
-    ldp     x29, x30, [sp], #32
+    ldp     x19, x20, [sp], #16
+    ldp     x29, x30, [sp], #16
     ret
 
 .section __DATA, __bss

@@ -13,6 +13,7 @@
 
 _main:
     stp     x29, x30, [sp, #-16]! // preserve FP and LR
+    mov     x29, sp               // set up new FP
     stp     x19, x20, [sp, #-16]! // x19 = return code, x20 = path value pointer
     stp     x21, x22, [sp, #-16]! // x21 = home value pointer, x22 = *envp
 

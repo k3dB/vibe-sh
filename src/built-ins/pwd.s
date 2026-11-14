@@ -11,9 +11,9 @@
 // Implementation using shared get_current_path function
 builtin_pwd:
     // Establish frame and save callee-saved registers
-    stp     x29, x30, [sp, #-32]!
+    stp     x29, x30, [sp, #-16]!
     mov     x29, sp
-    stp     x19, x20, [sp, #16]
+    stp     x19, x20, [sp, #-16]!
 
     // Call get_current_path with pwd_buffer
     adrp    x0, pwd_buffer@PAGE
@@ -69,8 +69,8 @@ pwd_display_error:
 
 // Shared epilogue: restore registers and return
 pwd_epilogue:
-    ldp     x19, x20, [sp, #16]
-    ldp     x29, x30, [sp], #32
+    ldp     x19, x20, [sp], #16
+    ldp     x29, x30, [sp], #16
     ret
 
 .section __DATA, __bss
