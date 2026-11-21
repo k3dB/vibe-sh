@@ -36,6 +36,13 @@ execute_command:
 
     ldr     x23, [x19]            // get first token (command name)
 
+    // Expand '~' in all tokens before dispatch
+    // x0 = token array, x1 = token count, x2 = home pointer
+    mov     x0, x19
+    mov     x1, x20
+    mov     x2, x22
+    bl      expand_tokens
+
     // Check for exit built-in
     mov     x0, x23
     bl      strcmp_exit

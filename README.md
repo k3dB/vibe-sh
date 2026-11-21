@@ -68,7 +68,7 @@ $$ exit
 - [x] Handle `cd` (without arguments) to navigate to `~`
 - [x] Replace the hard-coded `pwd` command with a proper implementation
 - [x] Handle `cd -` for switching to previous directory
-- [ ] Handle `~` in paths
+- [x] Handle `~` in paths
 - [ ] Parse quoted strings
 - [ ] Handle variable expansion
 

@@ -60,8 +60,7 @@ builtin_cd:
     b       display_cd_error
 
 cd_path:
-    // TODO: Handle tilde expansion (~)
-    ldr     x20, [x0, #8]         // get the path argument
+    ldr     x20, [x0, #8]         // get the path argument (already tilde-expanded)
 
     // Check if argument is "-" (single character check)
     ldrb    w1, [x20]             // load first byte
